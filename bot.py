@@ -9,23 +9,43 @@ import requests
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# --- Configuration ---
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# --- Configuration - Read from Environment Variables ---
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")  # Make sure this matches Railway variable name
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
-if not TELEGRAM_TOKEN:
-    print("❌ CRITICAL ERROR: TELEGRAM_BOT_TOKEN environment variable not set.")
-    exit(1)
+# Debug: Print all environment variables (for troubleshooting)
+print("=" * 50)
+print("DEBUG: Environment Variables Found:")
+for key in os.environ.keys():
+    if "TOKEN" in key or "API" in key:
+        print(f"  - {key} = {os.environ.get(key)[:10]}..." if os.environ.get(key) else f"  - {key} = (empty)")
+print("=" * 50)
 
-print(f"✅ Bot token loaded successfully.")
-print(f"✅ OpenAI API: {'Configured and ready.' if OPENAI_API_KEY else 'Not configured. Will use template posts.'}")
+if not TELEGRAM_TOKEN:
+    print("❌ CRITICAL ERROR: TELEGRAM_BOT_TOKEN environment variable not set!")
+    print("Please add it in Railway Dashboard -> Variables tab")
+    print("Key: TELEGRAM_BOT_TOKEN")
+    print("Value: your_bot_token_here")
+    # Don't exit immediately - try to read from different possible names
+    # Check for alternative names
+    alt_names = ["BOT_TOKEN", "TELEGRAM_TOKEN", "TOKEN"]
+    for name in alt_names:
+        if os.environ.get(name):
+            TELEGRAM_TOKEN = os.environ.get(name)
+            print(f"✅ Found token using alternative name: {name}")
+            break
+    
+    if not TELEGRAM_TOKEN:
+        exit(1)
+
+print(f"✅ Bot token loaded successfully! (Length: {len(TELEGRAM_TOKEN)})")
+print(f"✅ OpenAI API: {'Configured' if OPENAI_API_KEY else 'Not configured - using templates'}")
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- In-Memory Storage ---
-# WARNING: Data is lost on bot restart. This is fine for this use case.
 active_campaigns: Dict[int, Dict] = {}
 
 # --- Core Logic ---
@@ -47,7 +67,6 @@ def generate_post_content(topic: str, day: int, post_num: int, total_posts: int)
             )
             if response.status_code == 200:
                 post_text = response.json()["choices"][0]["message"]["content"].strip()
-                # Add day and post counter
                 final_post = f"{post_text}\n\n📅 Day {day} • Post {post_num}/{total_posts}"
                 return final_post
             else:
@@ -55,7 +74,7 @@ def generate_post_content(topic: str, day: int, post_num: int, total_posts: int)
         except Exception as e:
             logger.error(f"OpenAI exception: {e}")
 
-    # Fallback Templates (used if OpenAI fails or is not configured)
+    # Fallback Templates
     templates = [
         f"🤖 **{topic.upper()}** - Daily insights delivered!\nStay tuned for more valuable content.",
         f"💡 **{topic.upper()} TIP**\nWant to master {topic}? Consistency is key. Keep learning every day!",
@@ -128,7 +147,7 @@ def handle_new_campaign(update: Update, context: CallbackContext):
     # Schedule the first post immediately (2 seconds later)
     if 'campaign_jobs' not in context.chat_data:
         context.chat_data['campaign_jobs'] = {}
-    job = context.job_queue.run_repeating(post_to_channel, interval=5400, first=2, context=user_id) # 5400 seconds = 90 minutes
+    job = context.job_queue.run_repeating(post_to_channel, interval=5400, first=2, context=user_id)
     context.chat_data['campaign_jobs'][user_id] = job
 
     ai_note = "🧠 *Each post will be unique and AI-generated!*" if OPENAI_API_KEY else "📝 *Using templates. Add `OPENAI_API_KEY` for AI-generated content.*"
@@ -151,12 +170,10 @@ def post_to_channel(context: CallbackContext):
     campaign = active_campaigns.get(user_id)
 
     if not campaign:
-        # Campaign was deleted, remove the job
         job.schedule_removal()
         return
 
     if datetime.now() > campaign['end_date']:
-        # Campaign is over
         end_campaign(user_id, context)
         job.schedule_removal()
         return
@@ -184,11 +201,10 @@ def post_to_channel(context: CallbackContext):
         context.bot.send_message(
             chat_id=user_id,
             text=f"❌ *Fatal Error:* Could not post to `{campaign['channel']}`.\n\n"
-                 f"Please ensure I am an administrator in that channel, and the username is correct. Stopping campaign.",
+                 f"Please ensure I am an administrator in that channel. Stopping campaign.",
             parse_mode=ParseMode.MARKDOWN
         )
         end_campaign(user_id, context)
-        # Find and remove the job
         if 'campaign_jobs' in context.chat_data and user_id in context.chat_data['campaign_jobs']:
             context.chat_data['campaign_jobs'][user_id].schedule_removal()
             del context.chat_data['campaign_jobs'][user_id]
@@ -227,7 +243,6 @@ def stop_command(update: Update, context: CallbackContext):
         update.message.reply_text("❌ No active campaign to stop.")
         return
 
-    # Stop the scheduled job for this campaign
     if 'campaign_jobs' in context.chat_data and user_id in context.chat_data['campaign_jobs']:
         context.chat_data['campaign_jobs'][user_id].schedule_removal()
         del context.chat_data['campaign_jobs'][user_id]
@@ -244,7 +259,6 @@ def end_campaign(user_id: int, context: CallbackContext):
     """Helper function to clean up a finished or failed campaign."""
     campaign = active_campaigns.pop(user_id, None)
     if campaign:
-        # Notify user that the campaign is complete
         try:
             context.bot.send_message(
                 chat_id=user_id,
@@ -256,9 +270,7 @@ def end_campaign(user_id: int, context: CallbackContext):
                 parse_mode=ParseMode.MARKDOWN
             )
         except Exception as e:
-            logger.error(f"Could not notify user {user_id} of campaign end: {e}")
-
-    # Job cleanup is handled by the caller (post_to_channel) or by the stop command.
+            logger.error(f"Could not notify user {user_id}: {e}")
 
 def error_handler(update, context):
     """Log errors caused by updates."""
@@ -267,7 +279,13 @@ def error_handler(update, context):
 # --- Main Function ---
 def main():
     """Starts the bot."""
-    # Create the Updater and pass it your bot's token.
+    print("=" * 50)
+    print("🤖 Starting Auto Content Bot...")
+    print(f"   Bot Token: {'✅ Found' if TELEGRAM_TOKEN else '❌ Missing'}")
+    print(f"   OpenAI Key: {'✅ Found' if OPENAI_API_KEY else '❌ Not configured'}")
+    print("=" * 50)
+    
+    # Create the Updater
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
 
@@ -279,11 +297,14 @@ def main():
     dp.add_error_handler(error_handler)
 
     # Start the Bot
-    print("🚀 Starting bot on Railway...")
+    print("🚀 Bot is starting and polling for messages...")
     updater.start_polling()
-    print("✅ Bot is now running. Awaiting commands.")
+    print("✅ Bot is now LIVE and waiting for commands on Telegram!")
+    print("=" * 50)
+    print("Send /start to your bot on Telegram to get started")
+    print("=" * 50)
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT, SIGTERM, or SIGABRT.
+    # Run the bot
     updater.idle()
 
 if __name__ == '__main__':
