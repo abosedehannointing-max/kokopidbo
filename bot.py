@@ -274,11 +274,11 @@ def step7(update: Update, context: CallbackContext):
         parse_mode='Markdown'
     )
     
-    # THE 5 BUTTONS
+    # THE 5 BUTTONS with short text
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("◀️ Back to Step 6", callback_data='step6')],
         [InlineKeyboardButton("🌐 Website", url=WEBSITE)],
-        [InlineKeyboardButton("✉️ Email Support", url=f"mailto:{EMAIL_SUPPORT}")],
+        [InlineKeyboardButton("✉️ Email", url=f"mailto:{EMAIL_SUPPORT}")],
         [InlineKeyboardButton("📞 WhatsApp", url=SUPPORT_WA)],
         [InlineKeyboardButton("❌ Exit", callback_data='exit')]
     ])
@@ -319,7 +319,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(step7, pattern='^step7$'))
     dp.add_handler(CallbackQueryHandler(exit_handler, pattern='^exit$'))
     
-    logger.info("✅ Bot is ready!")
+    logger.info("✅ Bot is ready! Waiting for messages...")
     updater.start_polling()
     updater.idle()
 
