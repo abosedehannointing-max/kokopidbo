@@ -1,327 +1,416 @@
 import os
+import re
+import random
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from datetime import datetime, timedelta
+import requests
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+from telegram import Update, ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+# ============ CONFIGURATION ============
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
-# ============ YOUR FILE_IDS ============
-VIDEOS = {
-    'entry': 'BAACAgQAAxkBAAMYai3-z5ZB7JVZa9przLZIZX5rjUIAArwhAAJdNnBRRGw2cWcHYMA8BA',
-    'step1': 'BAACAgQAAxkBAAMaai3_GuiDvvO1PpJlFlZpUro9yj0AAr0hAAJdNnBRd5_eEgx7yLA8BA',
-    'step2': 'BAACAgQAAxkBAAMcai3_QFVXTCnldA_vUQNWVmhH8csAAr4hAAJdNnBRC4W2zTZTRRg8BA',
-    'step3': 'BAACAgQAAxkBAAMeai3_Tozjn7lPqIpT0anRYep-uDUAAr8hAAJdNnBRpLVsK7JLfZ48BA',
-    'step4': 'BAACAgQAAxkBAAMgai3_X76fPHfZK13m9wqlDpEp728AAsEhAAJdNnBRtmVky1-zBKY8BA',
-    'step5': 'BAACAgQAAxkBAAMiai3_dW99shMtSBh9pM9x9WA-LqkAAsIhAAJdNnBRGlzR_hVQSO08BA',
-    'step6': 'BAACAgQAAxkBAAMkai3_iBEsrC3T2-JqEtXb0eKQrL8AAsMhAAJdNnBRvhqvjSHZlag8BA',
-    'step7': 'BAACAgQAAxkBAAMmai3_vwlSsuChBpj6ZSw1rw8tpQUAAsQhAAJdNnBRAAEC-ApFvpvMPAQ'
-}
+if not TELEGRAM_TOKEN:
+    print("ERROR: TELEGRAM_BOT_TOKEN not set")
+    exit(1)
 
-# ============ LINKS ============
-REGISTER_LINK = 'https://app.bitai.app/h5/#/pages/sign/sign?invite=888'
-DOWNLOAD_BITAL = 'https://fr.bitai.app/app.html'
-BINANCE_REGISTER = 'https://accounts.binance.com/en/register?ref=1154159582'
-BINANCE_DOWNLOAD = 'https://www.binance.com/en/download'
-SUPPORT_WA = 'http://wa.me/6589691668'
-EMAIL_SUPPORT = 'info@bitai.app'
-WEBSITE = 'https://www.bitai.app'
+print("Bot token loaded successfully")
 
-# ============ MESSAGES ============
-ENTRY_MSG = """Welcome to BitAl by Affinity AI 🚀
+# ============ STORAGE ============
+active_campaigns = {}
 
-Most crypto traders don't lose because they lack knowledge.
-
-They lose because manual trading is emotional, bot settings are messy, and execution comes too late.
-
-It's time to upgrade to BitAl - built to analyze real-time market data and execute your trades automatically, 24/7."""
-
-STEP1_MSG = """Step 1/7: Register and download BitAl
-
-To start using BitAl, you need to register for your FREE BitAl account and download BitAl app. If you are referred by our BitAl user, please use their referral link to register."""
-
-STEP2_MSG = """Step 2/7: Setting up Binance Account
-
-To start using BitAl, you need a Binance account with KYC verification completed.
-
-Already have a verified Binance account? You may skip this video and continue to BitAI License Activation."""
-
-STEP3_MSG = """Step 3/7: BitAI License Activation
-
-To unlock BitAI's full auto AI trading, activate your BitAI License inside your BitAI app. Once activated, you can proceed to activate & enable your Binance Futures."""
-
-STEP4_MSG = """Step 4/7: Activate & Enable Binance Futures
-
-Before BitAI can execute, you need to activate Binance Futures inside your Binance account.
-
-Once Futures is enabled, you can continue to the next step and create your Binance API connection."""
-
-STEP5_MSG = """Step 5/7: Set Up Your API Keys
-
-Next, create your Binance API Keys and connect them to your BitAI account.
-
-This allows BitAI to analyze real-time market data and execute based on your selected risk profile.
-
-Make sure your API Keys are kept private and only connected inside the official BitAI platform."""
-
-STEP6_MSG = """Step 6/7: Transfer USDT to Binance Futures
-
-Before BitAI can execute, make sure your USDT is transferred into your own Binance Futures Wallet.
-
-This will be the capital used for BitAI's AI-driven execution based on your selected risk profile.
-
-Once completed, continue to Select Risk Profile."""
-
-STEP7_MSG = """Step 7/7: Select Your Risk Profile
-
-Choose your preferred BitAI Risk Profile based on your capital, goals, and risk appetite.
-
-BitAI will execute according to the risk level you select.
-
-Once done, BitAI will start to analyze real time market data and execute your trades automatically!"""
-
-# ============ START ============
-def start(update: Update, context: CallbackContext):
-    chat_id = update.effective_chat.id
-    
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['entry'],
-        caption=ENTRY_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Register my FREE BitAl account", url=REGISTER_LINK)],
-        [InlineKeyboardButton("Download BitAl (iOS & Android)", url=DOWNLOAD_BITAL)],
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step1')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Choose an option:", reply_markup=keyboard)
-
-# ============ STEP 1 ============
-def step1(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
-    
+# ============ FOOTBALL NEWS FUNCTIONS ============
+def get_football_news():
+    """Get football news from free API"""
     try:
-        query.message.delete()
+        response = requests.get("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328", timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("events"):
+                events = data["events"][:5]
+                news = []
+                for event in events:
+                    item = f"⚽ **{event.get('strEvent', 'Match')}**\n"
+                    item += f"📅 {event.get('dateEvent', 'Date TBD')}\n"
+                    item += f"🏆 {event.get('strLeague', 'League')}\n"
+                    news.append(item)
+                return "\n\n".join(news)
     except:
         pass
     
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step1'],
-        caption=STEP1_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Register FREE BitAl account", url=REGISTER_LINK)],
-        [InlineKeyboardButton("Download BitAl", url=DOWNLOAD_BITAL)],
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step2')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 1/7", reply_markup=keyboard)
+    # Fallback news
+    football_news = [
+        "⚽ **Real Madrid vs Barcelona**\n📅 This weekend\n🏆 El Clasico promises excitement!",
+        "⚽ **Messi leads Argentina**\n📅 World Cup Qualifiers\n🏆 The team prepares for the next match",
+        "⚽ **Champions League**\n📅 Semi-finals\n🏆 Europe's best teams compete",
+        "⚽ **Transfer Window**\n📅 Summer transfers\n🏆 Big moves across Europe",
+    ]
+    return random.choice(football_news)
 
-# ============ STEP 2 ============
-def step2(update: Update, context: CallbackContext):
+def generate_football_news_ai():
+    """Generate football news using AI or template"""
+    if OPENAI_API_KEY:
+        try:
+            prompt = "Write a short football news update, including results or transfers. Max 200 characters."
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+                json={"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": prompt}], "max_tokens": 150},
+                timeout=10
+            )
+            if response.status_code == 200:
+                text = response.json()["choices"][0]["message"]["content"].strip()
+                return f"⚽ **FOOTBALL NEWS**\n\n{text}\n\n#Football #News"
+        except:
+            pass
+    
+    # Template news
+    templates = [
+        "⚽ **BREAKING NEWS**\n\nReal Madrid wins with a last-minute goal.\n\n#LaLiga",
+        "⚽ **TRANSFER NEWS**\n\nClub looking to strengthen squad for next season.\n\n#Transfers",
+        "⚽ **INJURY UPDATE**\n\nStar player will miss the next match.\n\n#Injury",
+        "⚽ **MANAGER COMMENTS**\n\nCoach confident about winning the title.\n\n#Interview",
+    ]
+    return random.choice(templates)
+
+# ============ CONTENT GENERATION ============
+def generate_content(topic, day, post_num, total_posts):
+    if OPENAI_API_KEY:
+        try:
+            prompt = f"Write a short post about '{topic}'. Post {post_num} of {total_posts} for Day {day}. Include hashtags."
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+                json={"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": prompt}], "max_tokens": 150},
+                timeout=10
+            )
+            if response.status_code == 200:
+                text = response.json()["choices"][0]["message"]["content"].strip()
+                return f"{text}\n\n📅 Day {day} • {post_num}/{total_posts}"
+        except:
+            pass
+    
+    templates = [
+        f"🤖 **{topic.upper()}** - Daily insights!",
+        f"💡 **{topic.upper()} TIP** - Stay consistent!",
+        f"📢 **{topic.upper()} UPDATE** - Don't miss out!",
+        f"🔥 **{topic.upper()}** - Take action today!",
+    ]
+    post = random.choice(templates)
+    post += f"\n\n📅 Day {day} • {post_num}/{total_posts}\n#{topic.replace(' ', '')}"
+    return post
+
+# ============ MAIN MENU ============
+def main_menu():
+    """Create the main menu buttons"""
+    keyboard = [
+        [InlineKeyboardButton("📝 Create Campaign", callback_data="create_campaign")],
+        [InlineKeyboardButton("⚽ Football News", callback_data="football_news")],
+        [InlineKeyboardButton("📊 My Status", callback_data="my_status")],
+        [InlineKeyboardButton("🛑 Stop Campaign", callback_data="stop")],
+        [InlineKeyboardButton("❓ Help", callback_data="help")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+# ============ BOT HANDLERS ============
+def start(update, context):
+    """Handle /start command with menu buttons"""
+    update.message.reply_text(
+        "⚽ *Welcome to the Content Bot!*\n\n"
+        "Create automatic content for your channel "
+        "or get football news.\n\n"
+        "*Select an option:*",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=main_menu()
+    )
+
+def button_handler(update, context):
+    """Handle button clicks"""
     query = update.callback_query
     query.answer()
-    chat_id = query.message.chat.id
+    
+    user_id = query.from_user.id
+    data = query.data
+    
+    if data == "create_campaign":
+        query.edit_message_text(
+            "📝 *Create Campaign*\n\n"
+            "Send a message in this format:\n"
+            "`@channel | topic | days`\n\n"
+            "*Example:*\n"
+            "`@AIToolsDail | Football | 7`\n\n"
+            "The bot will post every 90 minutes.",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("◀️ Back", callback_data="back")
+            ]])
+        )
+    
+    elif data == "football_news":
+        # Generate football news
+        news = generate_football_news_ai()
+        query.edit_message_text(
+            f"⚽ *FOOTBALL NEWS*\n\n{news}\n\n"
+            "Use /football for more news.",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Refresh", callback_data="football_news")],
+                [InlineKeyboardButton("◀️ Back", callback_data="back")]
+            ])
+        )
+    
+    elif data == "my_status":
+        campaign = active_campaigns.get(user_id)
+        if campaign:
+            days_left = (campaign['end_date'] - datetime.now()).days
+            text = (
+                f"📊 *Your Status*\n\n"
+                f"Channel: {campaign['channel']}\n"
+                f"Topic: {campaign['topic']}\n"
+                f"Posts: {campaign['posts']}\n"
+                f"Days left: {days_left}"
+            )
+        else:
+            text = "📊 *No active campaigns*\n\nUse 'Create Campaign' to start."
+        
+        query.edit_message_text(
+            text,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("◀️ Back", callback_data="back")
+            ]])
+        )
+    
+    elif data == "stop":
+        if user_id in active_campaigns:
+            if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
+                context.chat_data['jobs'][user_id].schedule_removal()
+                del context.chat_data['jobs'][user_id]
+            active_campaigns.pop(user_id, None)
+            text = "🛑 *Campaign stopped successfully*"
+        else:
+            text = "🛑 *No active campaigns*"
+        
+        query.edit_message_text(
+            text,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("◀️ Back", callback_data="back")
+            ]])
+        )
+    
+    elif data == "help":
+        query.edit_message_text(
+            "❓ *Help*\n\n"
+            "*Commands:*\n"
+            "/start - Main menu\n"
+            "/football - Football news\n"
+            "/status - Check campaign\n"
+            "/stop - Stop campaign\n\n"
+            "*Campaign format:*\n"
+            "`@channel | topic | days`\n\n"
+            "*Example:*\n"
+            "`@mychannel | Football | 7`",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("◀️ Back", callback_data="back")
+            ]])
+        )
+    
+    elif data == "back":
+        query.edit_message_text(
+            "⚽ *Main Menu*\n\n"
+            "Select an option:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=main_menu()
+        )
+
+def football_command(update, context):
+    """Command /football - Get football news"""
+    news = generate_football_news_ai()
+    update.message.reply_text(
+        f"⚽ *FOOTBALL NEWS*\n\n{news}\n\n"
+        "Use /football for more news.",
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+def handle_message(update, context):
+    """Process message with format: @channel | topic | days"""
+    user_id = update.effective_user.id
+    text = update.message.text.strip()
+    
+    if '|' not in text:
+        start(update, context)
+        return
+    
+    parts = [p.strip() for p in text.split('|')]
+    if len(parts) != 3:
+        update.message.reply_text("Use: `@channel | topic | days`", parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    channel, topic, days_part = parts
+    days_match = re.search(r'(\d+)', days_part)
+    if not days_match:
+        update.message.reply_text("Please specify a valid number of days")
+        return
+    
+    days = int(days_match.group(1))
+    if not channel.startswith('@'):
+        update.message.reply_text("Channel must start with @")
+        return
+    
+    # Stop existing campaign
+    if user_id in active_campaigns:
+        if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
+            context.chat_data['jobs'][user_id].schedule_removal()
+        active_campaigns.pop(user_id, None)
+    
+    # Create new campaign
+    end_date = datetime.now() + timedelta(days=days)
+    active_campaigns[user_id] = {
+        'channel': channel,
+        'topic': topic,
+        'days': days,
+        'start_date': datetime.now(),
+        'end_date': end_date,
+        'posts': 0,
+        'post_num': 1
+    }
+    
+    if 'jobs' not in context.chat_data:
+        context.chat_data['jobs'] = {}
+    job = context.job_queue.run_repeating(post_to_channel, interval=5400, first=2, context=user_id)
+    context.chat_data['jobs'][user_id] = job
+    
+    update.message.reply_text(
+        f"🚀 *Campaign Started!*\n\n"
+        f"📢 Channel: {channel}\n"
+        f"📝 Topic: {topic}\n"
+        f"📅 Duration: {days} days\n"
+        f"⏱️ Every 90 minutes\n\n"
+        f"Use /status to track progress.",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("📊 Check Status", callback_data="my_status")
+        ]])
+    )
+
+def post_to_channel(context):
+    job = context.job
+    user_id = job.context
+    campaign = active_campaigns.get(user_id)
+    
+    if not campaign:
+        job.schedule_removal()
+        return
+    
+    if datetime.now() > campaign['end_date']:
+        if user_id in active_campaigns:
+            active_campaigns.pop(user_id)
+        job.schedule_removal()
+        return
+    
+    campaign['posts'] += 1
+    day = (datetime.now() - campaign['start_date']).days + 1
+    post_num = campaign['post_num']
+    
+    text = generate_content(campaign['topic'], day, post_num, 16)
+    
+    campaign['post_num'] += 1
+    if campaign['post_num'] > 16:
+        campaign['post_num'] = 1
     
     try:
-        query.message.delete()
-    except:
-        pass
-    
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step2'],
-        caption=STEP2_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Create FREE Binance account", url=BINANCE_REGISTER)],
-        [InlineKeyboardButton("Download Binance (iOS & Android)", url=BINANCE_DOWNLOAD)],
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step3')],
-        [InlineKeyboardButton("◀️ BACK", callback_data='step1')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 2/7", reply_markup=keyboard)
+        context.bot.send_message(
+            chat_id=campaign['channel'],
+            text=text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+        print(f"Posted to {campaign['channel']} - #{campaign['posts']}")
+    except Exception as e:
+        print(f"Error: {e}")
+        context.bot.send_message(
+            chat_id=user_id,
+            text=f"❌ Error posting to {campaign['channel']}. Make sure I'm admin."
+        )
+        if user_id in active_campaigns:
+            active_campaigns.pop(user_id)
+        job.schedule_removal()
 
-# ============ STEP 3 ============
-def step3(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
+def status_command(update, context):
+    user_id = update.effective_user.id
+    campaign = active_campaigns.get(user_id)
     
-    try:
-        query.message.delete()
-    except:
-        pass
+    if not campaign:
+        update.message.reply_text(
+            "📊 *No active campaign*\n\nUse /start to begin.",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=main_menu()
+        )
+        return
     
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step3'],
-        caption=STEP3_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step4')],
-        [InlineKeyboardButton("◀️ BACK", callback_data='step2')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 3/7", reply_markup=keyboard)
-
-# ============ STEP 4 ============
-def step4(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
-    
-    try:
-        query.message.delete()
-    except:
-        pass
-    
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step4'],
-        caption=STEP4_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step5')],
-        [InlineKeyboardButton("◀️ BACK", callback_data='step3')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 4/7", reply_markup=keyboard)
-
-# ============ STEP 5 ============
-def step5(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
-    
-    try:
-        query.message.delete()
-    except:
-        pass
-    
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step5'],
-        caption=STEP5_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step6')],
-        [InlineKeyboardButton("◀️ BACK", callback_data='step4')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 5/7", reply_markup=keyboard)
-
-# ============ STEP 6 ============
-def step6(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
-    
-    try:
-        query.message.delete()
-    except:
-        pass
-    
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step6'],
-        caption=STEP6_MSG,
-        parse_mode='Markdown'
-    )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➡️ NEXT", callback_data='step7')],
-        [InlineKeyboardButton("◀️ BACK", callback_data='step5')],
-        [InlineKeyboardButton("Contact support", url=SUPPORT_WA)]
-    ])
-    context.bot.send_message(chat_id=chat_id, text="Step 6/7", reply_markup=keyboard)
-
-# ============ STEP 7 - WITH 5 BUTTONS ============
-def step7(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    chat_id = query.message.chat.id
-    
-    # Delete previous message
-    try:
-        query.message.delete()
-    except:
-        pass
-    
-    # Send Step 7 video
-    context.bot.send_video(
-        chat_id=chat_id,
-        video=VIDEOS['step7'],
-        caption=STEP7_MSG,
-        parse_mode='Markdown'
-    )
-    
-    # THE 5 BUTTONS with short text
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Back to Step 6", callback_data='step6')],
-        [InlineKeyboardButton("🌐 Website", url=WEBSITE)],
-        [InlineKeyboardButton("✉️ Email", url=f"mailto:{EMAIL_SUPPORT}")],
-        [InlineKeyboardButton("📞 WhatsApp", url=SUPPORT_WA)],
-        [InlineKeyboardButton("❌ Exit", callback_data='exit')]
-    ])
-    
-    context.bot.send_message(
-        chat_id=chat_id,
-        text="✅ Step 7/7 - Setup Complete!\n\n"
-             "5 Buttons:\n"
-             "1. Back to previous step (Transferring USDT to Binance Futures)\n"
-             "2. Website https://www.bitai.app\n"
-             "3. Email support: info@bitai.app\n"
-             "4. Contact support http://wa.me/6589691668\n"
-             "5. Exit Conversation (close bot)",
-        reply_markup=keyboard
+    days_left = (campaign['end_date'] - datetime.now()).days
+    update.message.reply_text(
+        f"📊 *Campaign Status*\n\n"
+        f"📢 Channel: `{campaign['channel']}`\n"
+        f"📝 Topic: `{campaign['topic']}`\n"
+        f"📨 Posts: `{campaign['posts']}`\n"
+        f"📅 Days left: `{days_left}`\n\n"
+        f"Use /stop to end.",
+        parse_mode=ParseMode.MARKDOWN
     )
 
-# ============ EXIT ============
-def exit_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    query.edit_message_text("👋 Conversation ended. Send /start to begin again.")
+def stop_command(update, context):
+    user_id = update.effective_user.id
+    
+    if user_id in active_campaigns:
+        if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
+            context.chat_data['jobs'][user_id].schedule_removal()
+            del context.chat_data['jobs'][user_id]
+        active_campaigns.pop(user_id)
+        update.message.reply_text("✅ *Campaign stopped*", parse_mode=ParseMode.MARKDOWN)
+    else:
+        update.message.reply_text(
+            "❌ *No active campaign*\n\nUse /start to begin.",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=main_menu()
+        )
 
-# ============ MAIN ============
+def help_command(update, context):
+    update.message.reply_text(
+        "❓ *Help*\n\n"
+        "*Commands:*\n"
+        "/start - Main menu\n"
+        "/football - Football news\n"
+        "/status - Check active campaign\n"
+        "/stop - Stop campaign\n\n"
+        "*Buttons:* Use the menu to access all features.",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=main_menu()
+    )
+
+# ============ MAIN FUNCTION ============
 def main():
-    logger.info("🚀 Starting BitAl Bot...")
-    
-    updater = Updater(token=BOT_TOKEN, use_context=True)
+    updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
     
+    # Commands
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("football", football_command))
+    dp.add_handler(CommandHandler("status", status_command))
+    dp.add_handler(CommandHandler("stop", stop_command))
+    dp.add_handler(CommandHandler("help", help_command))
     
-    dp.add_handler(CallbackQueryHandler(step1, pattern='^step1$'))
-    dp.add_handler(CallbackQueryHandler(step2, pattern='^step2$'))
-    dp.add_handler(CallbackQueryHandler(step3, pattern='^step3$'))
-    dp.add_handler(CallbackQueryHandler(step4, pattern='^step4$'))
-    dp.add_handler(CallbackQueryHandler(step5, pattern='^step5$'))
-    dp.add_handler(CallbackQueryHandler(step6, pattern='^step6$'))
-    dp.add_handler(CallbackQueryHandler(step7, pattern='^step7$'))
-    dp.add_handler(CallbackQueryHandler(exit_handler, pattern='^exit$'))
+    # Message and button handlers
+    dp.add_handler(CallbackQueryHandler(button_handler))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     
-    logger.info("✅ Bot is ready! Waiting for messages...")
+    print("Bot starting with menu buttons and football news...")
     updater.start_polling()
+    print("Bot is running!")
     updater.idle()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
