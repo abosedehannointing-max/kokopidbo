@@ -2,6 +2,7 @@ import os
 import re
 import random
 import logging
+import asyncio
 from datetime import datetime, timedelta
 import requests
 
@@ -17,6 +18,10 @@ if not TELEGRAM_TOKEN:
     exit(1)
 
 print("Token do bot carregado com sucesso")
+
+# ============ GLOBAL STATE ============
+# Modes: "NORMAL" (content bot) or "REDIRECT" (funnel mode)
+GLOBAL_BOT_MODE = "NORMAL"
 
 # ============ ARMAZENAMENTO ============
 campanhas_ativas = {}
@@ -40,7 +45,6 @@ def obter_noticias_futebol():
     except:
         pass
     
-    # Notícias de fallback
     noticias_futebol = [
         "⚽ **Real Madrid vs Barcelona**\n📅 Neste fim de semana\n🏆 O Clássico promete emoção!",
         "⚽ **Messi lidera Argentina**\n📅 Eliminatórias\n🏆 A seleção se prepara para o próximo jogo",
@@ -66,7 +70,6 @@ def gerar_noticia_futebol_ia():
         except:
             pass
     
-    # Templates de notícias
     templates = [
         "⚽ **ÚLTIMA HORA**\n\nReal Madrid vence com gol nos últimos minutos.\n\n#LaLiga",
         "⚽ **MERCADO DA BOLA**\n\nClube busca reforçar elenco para próxima temporada.\n\n#Transferências",
@@ -115,8 +118,40 @@ def menu_principal():
     return InlineKeyboardMarkup(teclado)
 
 # ============ MANIPULADORES DO BOT ============
-def start(update, context):
-    """Comando /start com menu de botões"""
+def start_command(update, context):
+    """Comando /start - verifica modo REDIRECT primeiro"""
+    global GLOBAL_BOT_MODE
+    user = update.effective_user
+    
+    # 1. If in REDIRECT mode - send funnel message
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        welcome_text = (
+            "📈 *Forex AI Community – by Secret*\n\n"
+            "Welcome to Forex AI Community – by Secret\n"
+            "Here you will receive:\n\n"
+            "• Daily verified results\n"
+            "• Safe & aggressive presets\n"
+            "• MyFXBook proofs\n"
+            "• Investor access to real accounts\n"
+            "• Copytrade information\n"
+            "• Exclusive EA updates\n\n"
+            "🔹 *Join us now and start your journey!*"
+        )
+        update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)
+        
+        # Keyboard with join button
+        keyboard = [
+            [InlineKeyboardButton("🔴 JOIN FOREX AI COMMUNITY", url="https://t.me/+N6dbbnO8JBBmYzJh")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(
+            "👇 *Click below to join the community:*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+        return
+    
+    # 2. If in NORMAL mode - show main menu
     update.message.reply_text(
         "⚽ *Bem-vindo ao Bot de Conteúdo!*\n\n"
         "Crie conteúdo automático para seu canal "
@@ -127,7 +162,21 @@ def start(update, context):
     )
 
 def manipulador_botoes(update, context):
-    """Manipula cliques nos botões"""
+    """Manipula cliques nos botões - verifica modo REDIRECT"""
+    global GLOBAL_BOT_MODE
+    
+    # If in REDIRECT mode, ignore all button clicks
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(
+            "🔴 *Modo Redirecionamento Ativo*\n\n"
+            "Este bot está atualmente direcionando para o grupo VIP.\n"
+            "Use /start para ver a mensagem de redirecionamento.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+    
     query = update.callback_query
     query.answer()
     
@@ -149,7 +198,6 @@ def manipulador_botoes(update, context):
         )
     
     elif data == "noticias_futebol":
-        # Gerar notícia de futebol
         noticia = gerar_noticia_futebol_ia()
         query.edit_message_text(
             f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
@@ -228,7 +276,17 @@ def manipulador_botoes(update, context):
         )
 
 def futebol_command(update, context):
-    """Comando /futebol - Notícias de futebol"""
+    """Comando /futebol - verifica modo REDIRECT primeiro"""
+    global GLOBAL_BOT_MODE
+    
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        update.message.reply_text(
+            "🔴 *Modo Redirecionamento Ativo*\n\n"
+            "Este comando está desativado no momento.\n"
+            "Use /start para ver a mensagem de redirecionamento."
+        )
+        return
+    
     noticia = gerar_noticia_futebol_ia()
     update.message.reply_text(
         f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
@@ -237,12 +295,43 @@ def futebol_command(update, context):
     )
 
 def manipular_mensagem(update, context):
-    """Processa mensagem com formato: @canal | tema | dias"""
+    """Processa mensagens - verifica comandos REDIRECT/REVERSE primeiro"""
+    global GLOBAL_BOT_MODE
+    
     user_id = update.effective_user.id
     texto = update.message.text.strip()
     
+    # ============ SECRET ADMIN COMMANDS ============
+    if texto == "REDIRECT":
+        GLOBAL_BOT_MODE = "REDIRECT"
+        update.message.reply_text(
+            "🔴 *Modo Redirecionamento ATIVADO!*\n\n"
+            "O bot agora irá redirecionar todos os usuários para a comunidade Forex.\n"
+            "Use o comando REVERSE para voltar ao modo normal.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        print("🔄 BOT MODE CHANGED: REDIRECT")
+        return
+    
+    elif texto == "REVERSE":
+        GLOBAL_BOT_MODE = "NORMAL"
+        update.message.reply_text(
+            "✅ *Modo Normal RESTAURADO!*\n\n"
+            "O bot agora está funcionando normalmente.\n"
+            "Use o comando REDIRECT para ativar o modo de redirecionamento.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        print("🔄 BOT MODE CHANGED: NORMAL")
+        return
+    
+    # ============ IGNORE TEXT IN REDIRECT MODE ============
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        # Silently ignore all text messages in redirect mode
+        return
+    
+    # ============ NORMAL BOT LOGIC ============
     if '|' not in texto:
-        start(update, context)
+        start_command(update, context)
         return
     
     partes = [p.strip() for p in texto.split('|')]
@@ -340,6 +429,16 @@ def publicar_no_canal(context):
         trabalho.schedule_removal()
 
 def status_command(update, context):
+    """Comando /status - verifica modo REDIRECT primeiro"""
+    global GLOBAL_BOT_MODE
+    
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        update.message.reply_text(
+            "🔴 *Modo Redirecionamento Ativo*\n\n"
+            "Este comando está desativado no momento."
+        )
+        return
+    
     user_id = update.effective_user.id
     campanha = campanhas_ativas.get(user_id)
     
@@ -363,6 +462,16 @@ def status_command(update, context):
     )
 
 def parar_command(update, context):
+    """Comando /parar - verifica modo REDIRECT primeiro"""
+    global GLOBAL_BOT_MODE
+    
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        update.message.reply_text(
+            "🔴 *Modo Redirecionamento Ativo*\n\n"
+            "Este comando está desativado no momento."
+        )
+        return
+    
     user_id = update.effective_user.id
     
     if user_id in campanhas_ativas:
@@ -379,6 +488,16 @@ def parar_command(update, context):
         )
 
 def ajuda_command(update, context):
+    """Comando /ajuda - verifica modo REDIRECT primeiro"""
+    global GLOBAL_BOT_MODE
+    
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        update.message.reply_text(
+            "🔴 *Modo Redirecionamento Ativo*\n\n"
+            "Este comando está desativado no momento."
+        )
+        return
+    
     update.message.reply_text(
         "❓ *Ajuda*\n\n"
         "*Comandos:*\n"
@@ -397,7 +516,7 @@ def main():
     dp = updater.dispatcher
     
     # Comandos
-    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start", start_command))
     dp.add_handler(CommandHandler("futebol", futebol_command))
     dp.add_handler(CommandHandler("status", status_command))
     dp.add_handler(CommandHandler("parar", parar_command))
@@ -407,9 +526,17 @@ def main():
     dp.add_handler(CallbackQueryHandler(manipulador_botoes))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, manipular_mensagem))
     
-    print("Bot iniciando com menu de botões e notícias de futebol...")
+    print("=" * 50)
+    print("🤖 Bot iniciando com sistema REDIRECT/REVERSE...")
+    print(f"📊 Modo atual: {GLOBAL_BOT_MODE}")
+    print("=" * 50)
+    print("📌 Comandos secretos:")
+    print("   REDIRECT - Ativa modo de redirecionamento")
+    print("   REVERSE  - Retorna ao modo normal")
+    print("=" * 50)
+    
     updater.start_polling()
-    print("Bot está rodando!")
+    print("✅ Bot está rodando!")
     updater.idle()
 
 if __name__ == "__main__":
