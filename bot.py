@@ -8,52 +8,52 @@ import requests
 from telegram import Update, ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 
-# ============ CONFIGURATION ============
+# ============ CONFIGURAÇÃO ============
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 if not TELEGRAM_TOKEN:
-    print("ERROR: TELEGRAM_BOT_TOKEN not set")
+    print("ERRO: TELEGRAM_BOT_TOKEN não configurado")
     exit(1)
 
-print("Bot token loaded successfully")
+print("Token do bot carregado com sucesso")
 
-# ============ STORAGE ============
-active_campaigns = {}
+# ============ ARMAZENAMENTO ============
+campanhas_ativas = {}
 
-# ============ FOOTBALL NEWS FUNCTIONS ============
-def get_football_news():
-    """Get football news from free API"""
+# ============ FUNÇÕES DE NOTÍCIAS DE FUTEBOL ============
+def obter_noticias_futebol():
+    """Obtém notícias de futebol de API gratuita"""
     try:
         response = requests.get("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328", timeout=10)
         if response.status_code == 200:
             data = response.json()
             if data.get("events"):
-                events = data["events"][:5]
-                news = []
-                for event in events:
-                    item = f"⚽ **{event.get('strEvent', 'Match')}**\n"
-                    item += f"📅 {event.get('dateEvent', 'Date TBD')}\n"
-                    item += f"🏆 {event.get('strLeague', 'League')}\n"
-                    news.append(item)
-                return "\n\n".join(news)
+                eventos = data["events"][:5]
+                noticias = []
+                for evento in eventos:
+                    item = f"⚽ **{evento.get('strEvent', 'Jogo')}**\n"
+                    item += f"📅 {evento.get('dateEvent', 'Data a definir')}\n"
+                    item += f"🏆 {evento.get('strLeague', 'Liga')}\n"
+                    noticias.append(item)
+                return "\n\n".join(noticias)
     except:
         pass
     
-    # Fallback news
-    football_news = [
-        "⚽ **Real Madrid vs Barcelona**\n📅 This weekend\n🏆 El Clasico promises excitement!",
-        "⚽ **Messi leads Argentina**\n📅 World Cup Qualifiers\n🏆 The team prepares for the next match",
-        "⚽ **Champions League**\n📅 Semi-finals\n🏆 Europe's best teams compete",
-        "⚽ **Transfer Window**\n📅 Summer transfers\n🏆 Big moves across Europe",
+    # Notícias de fallback
+    noticias_futebol = [
+        "⚽ **Real Madrid vs Barcelona**\n📅 Neste fim de semana\n🏆 O Clássico promete emoção!",
+        "⚽ **Messi lidera Argentina**\n📅 Eliminatórias\n🏆 A seleção se prepara para o próximo jogo",
+        "⚽ **Champions League**\n📅 Semifinais\n🏆 Os melhores times da Europa competem",
+        "⚽ **Janela de Transferências**\n📅 Temporada de contratações\n🏆 Grandes movimentos na Europa",
     ]
-    return random.choice(football_news)
+    return random.choice(noticias_futebol)
 
-def generate_football_news_ai():
-    """Generate football news using AI or template"""
+def gerar_noticia_futebol_ia():
+    """Gera notícia de futebol usando IA ou template"""
     if OPENAI_API_KEY:
         try:
-            prompt = "Write a short football news update, including results or transfers. Max 200 characters."
+            prompt = "Escreva uma notícia curta de futebol, incluindo resultados ou transferências. Máximo 200 caracteres."
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
@@ -61,25 +61,25 @@ def generate_football_news_ai():
                 timeout=10
             )
             if response.status_code == 200:
-                text = response.json()["choices"][0]["message"]["content"].strip()
-                return f"⚽ **FOOTBALL NEWS**\n\n{text}\n\n#Football #News"
+                texto = response.json()["choices"][0]["message"]["content"].strip()
+                return f"⚽ **NOTÍCIAS DO FUTEBOL**\n\n{texto}\n\n#Futebol #Notícias"
         except:
             pass
     
-    # Template news
+    # Templates de notícias
     templates = [
-        "⚽ **BREAKING NEWS**\n\nReal Madrid wins with a last-minute goal.\n\n#LaLiga",
-        "⚽ **TRANSFER NEWS**\n\nClub looking to strengthen squad for next season.\n\n#Transfers",
-        "⚽ **INJURY UPDATE**\n\nStar player will miss the next match.\n\n#Injury",
-        "⚽ **MANAGER COMMENTS**\n\nCoach confident about winning the title.\n\n#Interview",
+        "⚽ **ÚLTIMA HORA**\n\nReal Madrid vence com gol nos últimos minutos.\n\n#LaLiga",
+        "⚽ **MERCADO DA BOLA**\n\nClube busca reforçar elenco para próxima temporada.\n\n#Transferências",
+        "⚽ **LESÃO IMPORTANTE**\n\nJogador estrela ficará de fora do próximo jogo.\n\n#Lesão",
+        "⚽ **DECLARAÇÕES**\n\nTécnico confia no time para vencer o título.\n\n#Entrevista",
     ]
     return random.choice(templates)
 
-# ============ CONTENT GENERATION ============
-def generate_content(topic, day, post_num, total_posts):
+# ============ GERAÇÃO DE CONTEÚDO ============
+def gerar_conteudo(tema, dia, num_publicacao, total_publicacoes):
     if OPENAI_API_KEY:
         try:
-            prompt = f"Write a short post about '{topic}'. Post {post_num} of {total_posts} for Day {day}. Include hashtags."
+            prompt = f"Escreva uma publicação curta sobre '{tema}'. Publicação {num_publicacao} de {total_publicacoes} para o Dia {dia}. Inclua hashtags."
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
@@ -87,329 +87,329 @@ def generate_content(topic, day, post_num, total_posts):
                 timeout=10
             )
             if response.status_code == 200:
-                text = response.json()["choices"][0]["message"]["content"].strip()
-                return f"{text}\n\n📅 Day {day} • {post_num}/{total_posts}"
+                texto = response.json()["choices"][0]["message"]["content"].strip()
+                return f"{texto}\n\n📅 Dia {dia} • {num_publicacao}/{total_publicacoes}"
         except:
             pass
     
     templates = [
-        f"🤖 **{topic.upper()}** - Daily insights!",
-        f"💡 **{topic.upper()} TIP** - Stay consistent!",
-        f"📢 **{topic.upper()} UPDATE** - Don't miss out!",
-        f"🔥 **{topic.upper()}** - Take action today!",
+        f"🤖 **{tema.upper()}** - Informação diária!",
+        f"💡 **DICA DE {tema.upper()}** - Mantenha-se consistente!",
+        f"📢 **ATUALIZAÇÃO DE {tema.upper()}** - Não perca!",
+        f"🔥 **{tema.upper()}** - Aja hoje!",
     ]
-    post = random.choice(templates)
-    post += f"\n\n📅 Day {day} • {post_num}/{total_posts}\n#{topic.replace(' ', '')}"
-    return post
+    publicacao = random.choice(templates)
+    publicacao += f"\n\n📅 Dia {dia} • {num_publicacao}/{total_publicacoes}\n#{tema.replace(' ', '')}"
+    return publicacao
 
-# ============ MAIN MENU ============
-def main_menu():
-    """Create the main menu buttons"""
-    keyboard = [
-        [InlineKeyboardButton("📝 Create Campaign", callback_data="create_campaign")],
-        [InlineKeyboardButton("⚽ Football News", callback_data="football_news")],
-        [InlineKeyboardButton("📊 My Status", callback_data="my_status")],
-        [InlineKeyboardButton("🛑 Stop Campaign", callback_data="stop")],
-        [InlineKeyboardButton("❓ Help", callback_data="help")],
+# ============ MENU PRINCIPAL ============
+def menu_principal():
+    """Cria o menu principal com botões"""
+    teclado = [
+        [InlineKeyboardButton("📝 Criar Campanha", callback_data="criar_campanha")],
+        [InlineKeyboardButton("⚽ Notícias do Futebol", callback_data="noticias_futebol")],
+        [InlineKeyboardButton("📊 Meu Status", callback_data="meu_status")],
+        [InlineKeyboardButton("🛑 Parar Campanha", callback_data="parar")],
+        [InlineKeyboardButton("❓ Ajuda", callback_data="ajuda")],
     ]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(teclado)
 
-# ============ BOT HANDLERS ============
+# ============ MANIPULADORES DO BOT ============
 def start(update, context):
-    """Handle /start command with menu buttons"""
+    """Comando /start com menu de botões"""
     update.message.reply_text(
-        "⚽ *Welcome to the Content Bot!*\n\n"
-        "Create automatic content for your channel "
-        "or get football news.\n\n"
-        "*Select an option:*",
+        "⚽ *Bem-vindo ao Bot de Conteúdo!*\n\n"
+        "Crie conteúdo automático para seu canal "
+        "ou receba notícias de futebol.\n\n"
+        "*Selecione uma opção:*",
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=main_menu()
+        reply_markup=menu_principal()
     )
 
-def button_handler(update, context):
-    """Handle button clicks"""
+def manipulador_botoes(update, context):
+    """Manipula cliques nos botões"""
     query = update.callback_query
     query.answer()
     
     user_id = query.from_user.id
     data = query.data
     
-    if data == "create_campaign":
+    if data == "criar_campanha":
         query.edit_message_text(
-            "📝 *Create Campaign*\n\n"
-            "Send a message in this format:\n"
-            "`@channel | topic | days`\n\n"
-            "*Example:*\n"
-            "`@AIToolsDail | Football | 7`\n\n"
-            "The bot will post every 90 minutes.",
+            "📝 *Criar Campanha*\n\n"
+            "Envie uma mensagem neste formato:\n"
+            "`@canal | tema | dias`\n\n"
+            "*Exemplo:*\n"
+            "`@AIToolsDail | Futebol | 7`\n\n"
+            "O bot publicará a cada 90 minutos.",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Back", callback_data="back")
+                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
             ]])
         )
     
-    elif data == "football_news":
-        # Generate football news
-        news = generate_football_news_ai()
+    elif data == "noticias_futebol":
+        # Gerar notícia de futebol
+        noticia = gerar_noticia_futebol_ia()
         query.edit_message_text(
-            f"⚽ *FOOTBALL NEWS*\n\n{news}\n\n"
-            "Use /football for more news.",
+            f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
+            "Use /futebol para mais notícias.",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Refresh", callback_data="football_news")],
-                [InlineKeyboardButton("◀️ Back", callback_data="back")]
+                [InlineKeyboardButton("🔄 Atualizar", callback_data="noticias_futebol")],
+                [InlineKeyboardButton("◀️ Voltar", callback_data="voltar")]
             ])
         )
     
-    elif data == "my_status":
-        campaign = active_campaigns.get(user_id)
-        if campaign:
-            days_left = (campaign['end_date'] - datetime.now()).days
-            text = (
-                f"📊 *Your Status*\n\n"
-                f"Channel: {campaign['channel']}\n"
-                f"Topic: {campaign['topic']}\n"
-                f"Posts: {campaign['posts']}\n"
-                f"Days left: {days_left}"
+    elif data == "meu_status":
+        campanha = campanhas_ativas.get(user_id)
+        if campanha:
+            dias_restantes = (campanha['data_fim'] - datetime.now()).days
+            texto = (
+                f"📊 *Seu Status*\n\n"
+                f"Canal: {campanha['canal']}\n"
+                f"Tema: {campanha['tema']}\n"
+                f"Publicações: {campanha['publicacoes']}\n"
+                f"Dias restantes: {dias_restantes}"
             )
         else:
-            text = "📊 *No active campaigns*\n\nUse 'Create Campaign' to start."
+            texto = "📊 *Nenhuma campanha ativa*\n\nUse 'Criar Campanha' para começar."
         
         query.edit_message_text(
-            text,
+            texto,
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Back", callback_data="back")
+                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
             ]])
         )
     
-    elif data == "stop":
-        if user_id in active_campaigns:
-            if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
-                context.chat_data['jobs'][user_id].schedule_removal()
-                del context.chat_data['jobs'][user_id]
-            active_campaigns.pop(user_id, None)
-            text = "🛑 *Campaign stopped successfully*"
+    elif data == "parar":
+        if user_id in campanhas_ativas:
+            if 'trabalhos' in context.chat_data and user_id in context.chat_data['trabalhos']:
+                context.chat_data['trabalhos'][user_id].schedule_removal()
+                del context.chat_data['trabalhos'][user_id]
+            campanhas_ativas.pop(user_id, None)
+            texto = "🛑 *Campanha parada com sucesso*"
         else:
-            text = "🛑 *No active campaigns*"
+            texto = "🛑 *Nenhuma campanha ativa*"
         
         query.edit_message_text(
-            text,
+            texto,
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Back", callback_data="back")
+                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
             ]])
         )
     
-    elif data == "help":
+    elif data == "ajuda":
         query.edit_message_text(
-            "❓ *Help*\n\n"
-            "*Commands:*\n"
-            "/start - Main menu\n"
-            "/football - Football news\n"
-            "/status - Check campaign\n"
-            "/stop - Stop campaign\n\n"
-            "*Campaign format:*\n"
-            "`@channel | topic | days`\n\n"
-            "*Example:*\n"
-            "`@mychannel | Football | 7`",
+            "❓ *Ajuda*\n\n"
+            "*Comandos:*\n"
+            "/start - Menu principal\n"
+            "/futebol - Notícias de futebol\n"
+            "/status - Ver campanha\n"
+            "/parar - Parar campanha\n\n"
+            "*Formato da campanha:*\n"
+            "`@canal | tema | dias`\n\n"
+            "*Exemplo:*\n"
+            "`@meucanal | Futebol | 7`",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Back", callback_data="back")
+                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
             ]])
         )
     
-    elif data == "back":
+    elif data == "voltar":
         query.edit_message_text(
-            "⚽ *Main Menu*\n\n"
-            "Select an option:",
+            "⚽ *Menu Principal*\n\n"
+            "Selecione uma opção:",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=main_menu()
+            reply_markup=menu_principal()
         )
 
-def football_command(update, context):
-    """Command /football - Get football news"""
-    news = generate_football_news_ai()
+def futebol_command(update, context):
+    """Comando /futebol - Notícias de futebol"""
+    noticia = gerar_noticia_futebol_ia()
     update.message.reply_text(
-        f"⚽ *FOOTBALL NEWS*\n\n{news}\n\n"
-        "Use /football for more news.",
+        f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
+        "Use /futebol para mais notícias.",
         parse_mode=ParseMode.MARKDOWN
     )
 
-def handle_message(update, context):
-    """Process message with format: @channel | topic | days"""
+def manipular_mensagem(update, context):
+    """Processa mensagem com formato: @canal | tema | dias"""
     user_id = update.effective_user.id
-    text = update.message.text.strip()
+    texto = update.message.text.strip()
     
-    if '|' not in text:
+    if '|' not in texto:
         start(update, context)
         return
     
-    parts = [p.strip() for p in text.split('|')]
-    if len(parts) != 3:
-        update.message.reply_text("Use: `@channel | topic | days`", parse_mode=ParseMode.MARKDOWN)
+    partes = [p.strip() for p in texto.split('|')]
+    if len(partes) != 3:
+        update.message.reply_text("Use: `@canal | tema | dias`", parse_mode=ParseMode.MARKDOWN)
         return
     
-    channel, topic, days_part = parts
-    days_match = re.search(r'(\d+)', days_part)
-    if not days_match:
-        update.message.reply_text("Please specify a valid number of days")
+    canal, tema, dias_parte = partes
+    dias_match = re.search(r'(\d+)', dias_parte)
+    if not dias_match:
+        update.message.reply_text("Por favor, especifique um número válido de dias")
         return
     
-    days = int(days_match.group(1))
-    if not channel.startswith('@'):
-        update.message.reply_text("Channel must start with @")
+    dias = int(dias_match.group(1))
+    if not canal.startswith('@'):
+        update.message.reply_text("O canal deve começar com @")
         return
     
-    # Stop existing campaign
-    if user_id in active_campaigns:
-        if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
-            context.chat_data['jobs'][user_id].schedule_removal()
-        active_campaigns.pop(user_id, None)
+    # Parar campanha existente
+    if user_id in campanhas_ativas:
+        if 'trabalhos' in context.chat_data and user_id in context.chat_data['trabalhos']:
+            context.chat_data['trabalhos'][user_id].schedule_removal()
+        campanhas_ativas.pop(user_id, None)
     
-    # Create new campaign
-    end_date = datetime.now() + timedelta(days=days)
-    active_campaigns[user_id] = {
-        'channel': channel,
-        'topic': topic,
-        'days': days,
-        'start_date': datetime.now(),
-        'end_date': end_date,
-        'posts': 0,
-        'post_num': 1
+    # Criar nova campanha
+    data_fim = datetime.now() + timedelta(days=dias)
+    campanhas_ativas[user_id] = {
+        'canal': canal,
+        'tema': tema,
+        'dias': dias,
+        'data_inicio': datetime.now(),
+        'data_fim': data_fim,
+        'publicacoes': 0,
+        'num_publicacao': 1
     }
     
-    if 'jobs' not in context.chat_data:
-        context.chat_data['jobs'] = {}
-    job = context.job_queue.run_repeating(post_to_channel, interval=5400, first=2, context=user_id)
-    context.chat_data['jobs'][user_id] = job
+    if 'trabalhos' not in context.chat_data:
+        context.chat_data['trabalhos'] = {}
+    trabalho = context.job_queue.run_repeating(publicar_no_canal, interval=5400, first=2, context=user_id)
+    context.chat_data['trabalhos'][user_id] = trabalho
     
     update.message.reply_text(
-        f"🚀 *Campaign Started!*\n\n"
-        f"📢 Channel: {channel}\n"
-        f"📝 Topic: {topic}\n"
-        f"📅 Duration: {days} days\n"
-        f"⏱️ Every 90 minutes\n\n"
-        f"Use /status to track progress.",
+        f"🚀 *Campanha Iniciada!*\n\n"
+        f"📢 Canal: {canal}\n"
+        f"📝 Tema: {tema}\n"
+        f"📅 Duração: {dias} dias\n"
+        f"⏱️ A cada 90 minutos\n\n"
+        f"Use /status para acompanhar o progresso.",
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("📊 Check Status", callback_data="my_status")
+            InlineKeyboardButton("📊 Ver Status", callback_data="meu_status")
         ]])
     )
 
-def post_to_channel(context):
-    job = context.job
-    user_id = job.context
-    campaign = active_campaigns.get(user_id)
+def publicar_no_canal(context):
+    trabalho = context.job
+    user_id = trabalho.context
+    campanha = campanhas_ativas.get(user_id)
     
-    if not campaign:
-        job.schedule_removal()
+    if not campanha:
+        trabalho.schedule_removal()
         return
     
-    if datetime.now() > campaign['end_date']:
-        if user_id in active_campaigns:
-            active_campaigns.pop(user_id)
-        job.schedule_removal()
+    if datetime.now() > campanha['data_fim']:
+        if user_id in campanhas_ativas:
+            campanhas_ativas.pop(user_id)
+        trabalho.schedule_removal()
         return
     
-    campaign['posts'] += 1
-    day = (datetime.now() - campaign['start_date']).days + 1
-    post_num = campaign['post_num']
+    campanha['publicacoes'] += 1
+    dia = (datetime.now() - campanha['data_inicio']).days + 1
+    num_publicacao = campanha['num_publicacao']
     
-    text = generate_content(campaign['topic'], day, post_num, 16)
+    texto = gerar_conteudo(campanha['tema'], dia, num_publicacao, 16)
     
-    campaign['post_num'] += 1
-    if campaign['post_num'] > 16:
-        campaign['post_num'] = 1
+    campanha['num_publicacao'] += 1
+    if campanha['num_publicacao'] > 16:
+        campanha['num_publicacao'] = 1
     
     try:
         context.bot.send_message(
-            chat_id=campaign['channel'],
-            text=text,
+            chat_id=campanha['canal'],
+            text=texto,
             parse_mode=ParseMode.MARKDOWN
         )
-        print(f"Posted to {campaign['channel']} - #{campaign['posts']}")
+        print(f"Publicado em {campanha['canal']} - #{campanha['publicacoes']}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Erro: {e}")
         context.bot.send_message(
             chat_id=user_id,
-            text=f"❌ Error posting to {campaign['channel']}. Make sure I'm admin."
+            text=f"❌ Erro ao publicar em {campanha['canal']}. Certifique-se de que sou administrador."
         )
-        if user_id in active_campaigns:
-            active_campaigns.pop(user_id)
-        job.schedule_removal()
+        if user_id in campanhas_ativas:
+            campanhas_ativas.pop(user_id)
+        trabalho.schedule_removal()
 
 def status_command(update, context):
     user_id = update.effective_user.id
-    campaign = active_campaigns.get(user_id)
+    campanha = campanhas_ativas.get(user_id)
     
-    if not campaign:
+    if not campanha:
         update.message.reply_text(
-            "📊 *No active campaign*\n\nUse /start to begin.",
+            "📊 *Nenhuma campanha ativa*\n\nUse /start para começar.",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=main_menu()
+            reply_markup=menu_principal()
         )
         return
     
-    days_left = (campaign['end_date'] - datetime.now()).days
+    dias_restantes = (campanha['data_fim'] - datetime.now()).days
     update.message.reply_text(
-        f"📊 *Campaign Status*\n\n"
-        f"📢 Channel: `{campaign['channel']}`\n"
-        f"📝 Topic: `{campaign['topic']}`\n"
-        f"📨 Posts: `{campaign['posts']}`\n"
-        f"📅 Days left: `{days_left}`\n\n"
-        f"Use /stop to end.",
+        f"📊 *Status da Campanha*\n\n"
+        f"📢 Canal: `{campanha['canal']}`\n"
+        f"📝 Tema: `{campanha['tema']}`\n"
+        f"📨 Publicações: `{campanha['publicacoes']}`\n"
+        f"📅 Dias restantes: `{dias_restantes}`\n\n"
+        f"Use /parar para finalizar.",
         parse_mode=ParseMode.MARKDOWN
     )
 
-def stop_command(update, context):
+def parar_command(update, context):
     user_id = update.effective_user.id
     
-    if user_id in active_campaigns:
-        if 'jobs' in context.chat_data and user_id in context.chat_data['jobs']:
-            context.chat_data['jobs'][user_id].schedule_removal()
-            del context.chat_data['jobs'][user_id]
-        active_campaigns.pop(user_id)
-        update.message.reply_text("✅ *Campaign stopped*", parse_mode=ParseMode.MARKDOWN)
+    if user_id in campanhas_ativas:
+        if 'trabalhos' in context.chat_data and user_id in context.chat_data['trabalhos']:
+            context.chat_data['trabalhos'][user_id].schedule_removal()
+            del context.chat_data['trabalhos'][user_id]
+        campanhas_ativas.pop(user_id)
+        update.message.reply_text("✅ *Campanha parada*", parse_mode=ParseMode.MARKDOWN)
     else:
         update.message.reply_text(
-            "❌ *No active campaign*\n\nUse /start to begin.",
+            "❌ *Nenhuma campanha ativa*\n\nUse /start para começar.",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=main_menu()
+            reply_markup=menu_principal()
         )
 
-def help_command(update, context):
+def ajuda_command(update, context):
     update.message.reply_text(
-        "❓ *Help*\n\n"
-        "*Commands:*\n"
-        "/start - Main menu\n"
-        "/football - Football news\n"
-        "/status - Check active campaign\n"
-        "/stop - Stop campaign\n\n"
-        "*Buttons:* Use the menu to access all features.",
+        "❓ *Ajuda*\n\n"
+        "*Comandos:*\n"
+        "/start - Menu principal\n"
+        "/futebol - Notícias de futebol\n"
+        "/status - Ver campanha ativa\n"
+        "/parar - Parar campanha\n\n"
+        "*Botões:* Use o menu para acessar todos os recursos.",
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=main_menu()
+        reply_markup=menu_principal()
     )
 
-# ============ MAIN FUNCTION ============
+# ============ FUNÇÃO PRINCIPAL ============
 def main():
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
     
-    # Commands
+    # Comandos
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("football", football_command))
+    dp.add_handler(CommandHandler("futebol", futebol_command))
     dp.add_handler(CommandHandler("status", status_command))
-    dp.add_handler(CommandHandler("stop", stop_command))
-    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("parar", parar_command))
+    dp.add_handler(CommandHandler("ajuda", ajuda_command))
     
-    # Message and button handlers
-    dp.add_handler(CallbackQueryHandler(button_handler))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    # Manipuladores de mensagens e botões
+    dp.add_handler(CallbackQueryHandler(manipulador_botoes))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, manipular_mensagem))
     
-    print("Bot starting with menu buttons and football news...")
+    print("Bot iniciando com menu de botões e notícias de futebol...")
     updater.start_polling()
-    print("Bot is running!")
+    print("Bot está rodando!")
     updater.idle()
 
 if __name__ == "__main__":
