@@ -360,7 +360,7 @@ def start_command(update, context):
     """Comando /start - Verifica modo REDIRECT"""
     global GLOBAL_BOT_MODE
     
-    # ===== REDIRECT MODE - Show plain text only =====
+    # ===== REDIRECT MODE - Show ONLY the pure text =====
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
@@ -377,6 +377,16 @@ def start_command(update, context):
 
 def language_button_handler(update, context):
     """Manipula a seleção de idioma - ONLY for NORMAL mode"""
+    # This function should NEVER be called in REDIRECT mode
+    # But just in case, check the mode
+    global GLOBAL_BOT_MODE
+    
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
+        return
+    
     query = update.callback_query
     query.answer()
     
@@ -401,13 +411,14 @@ def manipulador_botoes(update, context):
     global GLOBAL_BOT_MODE
     
     query = update.callback_query
-    data = query.data
     
-    # If in REDIRECT mode, ignore all button clicks
+    # ===== REDIRECT MODE - Ignore all buttons, show pure text =====
     if GLOBAL_BOT_MODE == "REDIRECT":
-        query.answer("Redirect mode active - buttons disabled")
+        query.answer()
         query.edit_message_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
+    
+    data = query.data
     
     # Check if it's a language selection button
     if data.startswith("lang_"):
@@ -490,10 +501,6 @@ def futebol_command(update, context):
     """Comando /futebol - Notícias de futebol"""
     global GLOBAL_BOT_MODE
     
-    user_id = update.effective_user.id
-    lang = USER_LANGUAGE.get(user_id, "english")
-    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
-    
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
@@ -535,13 +542,14 @@ def manipular_mensagem(update, context):
         print("🔄 BOT MODE CHANGED: NORMAL")
         return
     
-    # ============ NORMAL BOT LOGIC ============
-    lang = USER_LANGUAGE.get(user_id, "english")
-    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
-    
+    # ===== REDIRECT MODE - Show pure text for any message =====
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
+    
+    # ============ NORMAL BOT LOGIC ============
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if '|' not in texto:
         start_command(update, context)
