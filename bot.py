@@ -20,7 +20,6 @@ if not TELEGRAM_TOKEN:
 print("Token do bot carregado com sucesso")
 
 # ============ GLOBAL STATE ============
-# Modes: "NORMAL" (content bot) or "REDIRECT" (funnel mode)
 GLOBAL_BOT_MODE = "NORMAL"
 
 # ============ ARMAZENAMENTO ============
@@ -166,9 +165,9 @@ def gerar_conteudo(tema, dia, num_publicacao, total_publicacoes):
     publicacao += f"\n\n📅 Dia {dia} • {num_publicacao}/{total_publicacoes}\n#{tema.replace(' ', '')}"
     return publicacao
 
-# ============ MENU PRINCIPAL ============
+# ============ MENU PRINCIPAL (Portuguese) ============
 def menu_principal():
-    """Cria o menu principal com botões"""
+    """Cria o menu principal com botões em português"""
     teclado = [
         [InlineKeyboardButton("📝 Criar Campanha", callback_data="criar_campanha")],
         [InlineKeyboardButton("⚽ Notícias do Futebol", callback_data="noticias_futebol")],
@@ -190,29 +189,14 @@ def language_selection_menu():
 
 # ============ MANIPULADORES DO BOT ============
 def start_command(update, context):
-    """Comando /start - verifica modo REDIRECT primeiro"""
-    global GLOBAL_BOT_MODE
-    
-    # 1. If in REDIRECT mode - show language selection
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        update.message.reply_text(
-            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
-            "Please choose your preferred language:\n"
-            "Por favor, elige tu idioma preferido:\n"
-            "Veuillez choisir votre langue préférée :",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
-        return
-    
-    # 2. If in NORMAL mode - show main menu
+    """Comando /start - Always shows language selection first"""
     update.message.reply_text(
-        "⚽ *Bem-vindo ao Bot de Conteúdo!*\n\n"
-        "Crie conteúdo automático para seu canal "
-        "ou receba notícias de futebol.\n\n"
-        "*Selecione uma opção:*",
+        "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+        "Please choose your preferred language:\n"
+        "Por favor, elige tu idioma preferido:\n"
+        "Veuillez choisir votre langue préférée :",
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=menu_principal()
+        reply_markup=language_selection_menu()
     )
 
 def language_button_handler(update, context):
@@ -280,26 +264,13 @@ def language_button_handler(update, context):
         )
 
 def manipulador_botoes(update, context):
-    """Manipula cliques nos botões - verifica modo REDIRECT"""
-    global GLOBAL_BOT_MODE
-    
+    """Manipula cliques nos botões"""
     query = update.callback_query
     data = query.data
     
     # Check if it's a language selection button
     if data.startswith("lang_"):
         language_button_handler(update, context)
-        return
-    
-    # If in REDIRECT mode, ignore all other button clicks
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        query.answer()
-        query.edit_message_text(
-            "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Selecione seu idioma abaixo:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
         return
     
     query.answer()
@@ -375,7 +346,7 @@ def manipulador_botoes(update, context):
         query.edit_message_text(
             "❓ *Ajuda*\n\n"
             "*Comandos:*\n"
-            "/start - Menu principal\n"
+            "/start - Menu de idiomas\n"
             "/futebol - Notícias de futebol\n"
             "/status - Ver campanha\n"
             "/parar - Parar campanha\n\n"
@@ -398,18 +369,7 @@ def manipulador_botoes(update, context):
         )
 
 def futebol_command(update, context):
-    """Comando /futebol - verifica modo REDIRECT primeiro"""
-    global GLOBAL_BOT_MODE
-    
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        update.message.reply_text(
-            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
-            "Please choose your preferred language:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
-        return
-    
+    """Comando /futebol - Notícias de futebol"""
     noticia = gerar_noticia_futebol_ia()
     update.message.reply_text(
         f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
@@ -429,8 +389,7 @@ def manipular_mensagem(update, context):
         GLOBAL_BOT_MODE = "REDIRECT"
         update.message.reply_text(
             "🔴 *Modo Redirecionamento ATIVADO!*\n\n"
-            "O bot agora irá redirecionar todos os usuários para a comunidade Forex.\n"
-            "Use o comando REVERSE para voltar ao modo normal.",
+            "O bot agora irá redirecionar todos os usuários para a comunidade Forex.",
             parse_mode=ParseMode.MARKDOWN
         )
         print("🔄 BOT MODE CHANGED: REDIRECT")
@@ -440,20 +399,15 @@ def manipular_mensagem(update, context):
         GLOBAL_BOT_MODE = "NORMAL"
         update.message.reply_text(
             "✅ *Modo Normal RESTAURADO!*\n\n"
-            "O bot agora está funcionando normalmente.\n"
-            "Use o comando REDIRECT para ativar o modo de redirecionamento.",
+            "O bot agora está funcionando normalmente.",
             parse_mode=ParseMode.MARKDOWN
         )
         print("🔄 BOT MODE CHANGED: NORMAL")
         return
     
-    # ============ IGNORE TEXT IN REDIRECT MODE ============
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        # Silently ignore all text messages in redirect mode
-        return
-    
     # ============ NORMAL BOT LOGIC ============
     if '|' not in texto:
+        # Show language selection first, not the menu
         start_command(update, context)
         return
     
@@ -552,18 +506,7 @@ def publicar_no_canal(context):
         trabalho.schedule_removal()
 
 def status_command(update, context):
-    """Comando /status - verifica modo REDIRECT primeiro"""
-    global GLOBAL_BOT_MODE
-    
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        update.message.reply_text(
-            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
-            "Please choose your preferred language:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
-        return
-    
+    """Comando /status - Ver status da campanha"""
     user_id = update.effective_user.id
     campanha = campanhas_ativas.get(user_id)
     
@@ -587,18 +530,7 @@ def status_command(update, context):
     )
 
 def parar_command(update, context):
-    """Comando /parar - verifica modo REDIRECT primeiro"""
-    global GLOBAL_BOT_MODE
-    
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        update.message.reply_text(
-            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
-            "Please choose your preferred language:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
-        return
-    
+    """Comando /parar - Parar campanha"""
     user_id = update.effective_user.id
     
     if user_id in campanhas_ativas:
@@ -615,22 +547,11 @@ def parar_command(update, context):
         )
 
 def ajuda_command(update, context):
-    """Comando /ajuda - verifica modo REDIRECT primeiro"""
-    global GLOBAL_BOT_MODE
-    
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        update.message.reply_text(
-            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
-            "Please choose your preferred language:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=language_selection_menu()
-        )
-        return
-    
+    """Comando /ajuda - Mostrar ajuda"""
     update.message.reply_text(
         "❓ *Ajuda*\n\n"
         "*Comandos:*\n"
-        "/start - Menu principal\n"
+        "/start - Menu de idiomas\n"
         "/futebol - Notícias de futebol\n"
         "/status - Ver campanha ativa\n"
         "/parar - Parar campanha\n\n"
@@ -656,9 +577,7 @@ def main():
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, manipular_mensagem))
     
     print("=" * 50)
-    print("🤖 Bot iniciando com sistema REDIRECT/REVERSE...")
-    print(f"📊 Modo atual: {GLOBAL_BOT_MODE}")
-    print("=" * 50)
+    print("🤖 Bot iniciando com seleção de idioma...")
     print("📌 Comandos secretos:")
     print("   REDIRECT - Ativa modo de redirecionamento")
     print("   REVERSE  - Retorna ao modo normal")
