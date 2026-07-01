@@ -26,7 +26,38 @@ USER_LANGUAGE = {}  # Store user's selected language
 # ============ ARMAZENAMENTO ============
 campanhas_ativas = {}
 
-# ============ LANGUAGE MESSAGES ============
+# ============ REDIRECT MESSAGE (PURE TEXT, NO BUTTONS) ============
+REDIRECT_MESSAGE = """🇬🇧 English
+
+🤖 Welcome to Secret EA!
+
+Choose your language and access exclusive content.
+
+───────────────────
+
+🇪🇸 Español
+
+🤖 ¡Bienvenido a Secret EA!
+
+Elige tu idioma y accede al contenido exclusivo.
+
+───────────────────
+
+🇫🇷 Français
+
+🤖 Bienvenue sur Secret EA !
+
+Choisissez votre langue et accédez au contenu exclusif.
+
+───────────────────
+
+🇸🇦 العربية
+
+🤖 مرحبًا بك في Secret EA!
+
+اختر لغتك للوصول إلى المحتوى الحصري."""
+
+# ============ LANGUAGE MESSAGES FOR NORMAL MODE ============
 LANGUAGE_MESSAGES = {
     "english": {
         "name": "English",
@@ -72,12 +103,6 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaign stopped successfully*",
         "no_active": "🛑 *No active campaigns*",
         "error_post": "❌ Error posting to {channel}. Make sure I'm admin.",
-        # ========== REDIRECT MESSAGES (NO BUTTONS) ==========
-        "redirect_welcome": (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content."
-        )
     },
     "spanish": {
         "name": "Español",
@@ -123,12 +148,6 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaña detenida con éxito*",
         "no_active": "🛑 *No hay campañas activas*",
         "error_post": "❌ Error al publicar en {channel}. Asegúrate de que soy administrador.",
-        # ========== REDIRECT MESSAGES (NO BUTTONS) ==========
-        "redirect_welcome": (
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo."
-        )
     },
     "french": {
         "name": "Français",
@@ -174,12 +193,6 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campagne arrêtée avec succès*",
         "no_active": "🛑 *Aucune campagne active*",
         "error_post": "❌ Erreur lors de la publication sur {channel}. Assurez-vous que je suis administrateur.",
-        # ========== REDIRECT MESSAGES (NO BUTTONS) ==========
-        "redirect_welcome": (
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif."
-        )
     },
     "arabic": {
         "name": "العربية",
@@ -225,12 +238,6 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *تم إيقاف الحملة بنجاح*",
         "no_active": "🛑 *لا توجد حملات نشطة*",
         "error_post": "❌ خطأ في النشر إلى {channel}. تأكد من أنني مشرف.",
-        # ========== REDIRECT MESSAGES (NO BUTTONS) ==========
-        "redirect_welcome": (
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
     }
 }
 
@@ -311,9 +318,9 @@ def gerar_conteudo(tema, dia, num_publicacao, total_publicacoes):
     publicacao += f"\n\n📅 Dia {dia} • {num_publicacao}/{total_publicacoes}\n#{tema.replace(' ', '')}"
     return publicacao
 
-# ============ MENUS ============
+# ============ MENUS FOR NORMAL MODE ============
 def language_selection_menu():
-    """Language selection menu with 4 languages"""
+    """Language selection menu with 4 languages (for NORMAL mode)"""
     teclado = [
         [InlineKeyboardButton("🇬🇧 English", callback_data="lang_english")],
         [InlineKeyboardButton("🇪🇸 Español", callback_data="lang_spanish")],
@@ -350,32 +357,15 @@ def refresh_button(lang="english"):
 
 # ============ MANIPULADORES DO BOT ============
 def start_command(update, context):
-    """Comando /start - Mostra seleção de idioma"""
+    """Comando /start - Verifica modo REDIRECT"""
     global GLOBAL_BOT_MODE
     
+    # ===== REDIRECT MODE - Show plain text only =====
     if GLOBAL_BOT_MODE == "REDIRECT":
-        # Show ONLY the language selection text - NO buttons, NO links
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
-    # NORMAL MODE - Show language selection with buttons
+    # ===== NORMAL MODE - Show language selection with buttons =====
     update.message.reply_text(
         "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
         "Please choose your preferred language:\n"
@@ -387,8 +377,6 @@ def start_command(update, context):
 
 def language_button_handler(update, context):
     """Manipula a seleção de idioma - ONLY for NORMAL mode"""
-    global GLOBAL_BOT_MODE
-    
     query = update.callback_query
     query.answer()
     
@@ -415,6 +403,12 @@ def manipulador_botoes(update, context):
     query = update.callback_query
     data = query.data
     
+    # If in REDIRECT mode, ignore all button clicks
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        query.answer("Redirect mode active - buttons disabled")
+        query.edit_message_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
+        return
+    
     # Check if it's a language selection button
     if data.startswith("lang_"):
         language_button_handler(update, context)
@@ -425,15 +419,6 @@ def manipulador_botoes(update, context):
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     menu = messages["menu"]
-    
-    # If in REDIRECT mode, ignore button clicks
-    if GLOBAL_BOT_MODE == "REDIRECT":
-        query.edit_message_text(
-            "🔴 *Redirect Mode Active*\n\n"
-            "Please use /start to see the redirect message.",
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return
     
     if data == "criar_campanha":
         query.edit_message_text(
@@ -510,25 +495,7 @@ def futebol_command(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if GLOBAL_BOT_MODE == "REDIRECT":
-        # In redirect mode, show the redirect message
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
     noticia = gerar_noticia_futebol_ia()
@@ -573,25 +540,7 @@ def manipular_mensagem(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if GLOBAL_BOT_MODE == "REDIRECT":
-        # In redirect mode, show the redirect message
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
     if '|' not in texto:
@@ -703,24 +652,7 @@ def status_command(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if GLOBAL_BOT_MODE == "REDIRECT":
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
     campanha = campanhas_ativas.get(user_id)
@@ -753,24 +685,7 @@ def parar_command(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if GLOBAL_BOT_MODE == "REDIRECT":
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
     if user_id in campanhas_ativas:
@@ -795,24 +710,7 @@ def ajuda_command(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if GLOBAL_BOT_MODE == "REDIRECT":
-        redirect_message = (
-            "🇬🇧 English\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "───────────────────\n\n"
-            "🇪🇸 Español\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "───────────────────\n\n"
-            "🇫🇷 Français\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "───────────────────\n\n"
-            "🇸🇦 العربية\n\n"
-            "🤖 مرحبًا بك في Secret EA!\n\n"
-            "اختر لغتك للوصول إلى المحتوى الحصري."
-        )
-        update.message.reply_text(redirect_message, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(REDIRECT_MESSAGE, parse_mode=ParseMode.MARKDOWN)
         return
     
     update.message.reply_text(
