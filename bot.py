@@ -13,6 +13,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
+# Secret EA Channel Link
+SECRET_EA_CHANNEL = "https://t.me/forexai_secret"  # Replace with your actual channel link
+
 if not TELEGRAM_TOKEN:
     print("ERRO: TELEGRAM_BOT_TOKEN não configurado")
     exit(1)
@@ -72,12 +75,11 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaign stopped successfully*",
         "no_active": "🛑 *No active campaigns*",
         "error_post": "❌ Error posting to {channel}. Make sure I'm admin.",
-        "join_button": "🔴 JOIN FOREX AI COMMUNITY",
+        "join_button": "🔴 JOIN SECRET EA CHANNEL",
+        "redirect_title": "📈 *SECRET EA - PREMIUM TRADING*",
         "redirect_welcome": (
-            "🇬🇧 *Welcome to Secret EA!*\n\n"
-            "🤖 Welcome to Secret EA!\n\n"
-            "Choose your language and access exclusive content.\n\n"
-            "📊 *Forex AI Community – by Secret*\n\n"
+            "🔥 *Forex AI Community - SECRET EA*\n\n"
+            "Welcome to Forex AI Community - by Secret\n\n"
             "Here you will receive:\n\n"
             "• Daily verified results\n"
             "• Safe & aggressive presets\n"
@@ -85,9 +87,9 @@ LANGUAGE_MESSAGES = {
             "• Investor access to real accounts\n"
             "• Copytrade information\n"
             "• Exclusive EA updates\n\n"
-            "🔹 *Join us now and start your journey!*"
+            "🔹 *Request to join now and start your journey!*"
         ),
-        "click_to_join": "👇 *Click below to join the community:*"
+        "click_to_join": "👇 *Click below to request access:*"
     },
     "spanish": {
         "name": "Español",
@@ -133,12 +135,11 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaña detenida con éxito*",
         "no_active": "🛑 *No hay campañas activas*",
         "error_post": "❌ Error al publicar en {channel}. Asegúrate de que soy administrador.",
-        "join_button": "🔴 UNIRSE A LA COMUNIDAD FOREX AI",
+        "join_button": "🔴 UNIRSE AL CANAL SECRET EA",
+        "redirect_title": "📈 *SECRET EA - TRADING PREMIUM*",
         "redirect_welcome": (
-            "🇪🇸 *¡Bienvenido a Secret EA!*\n\n"
-            "🤖 ¡Bienvenido a Secret EA!\n\n"
-            "Elige tu idioma y accede al contenido exclusivo.\n\n"
-            "📊 *Comunidad Forex AI – by Secret*\n\n"
+            "🔥 *Comunidad Forex AI - SECRET EA*\n\n"
+            "Bienvenido a la Comunidad Forex AI - by Secret\n\n"
             "Aquí recibirás:\n\n"
             "• Resultados diarios verificados\n"
             "• Presets seguros y agresivos\n"
@@ -146,9 +147,9 @@ LANGUAGE_MESSAGES = {
             "• Acceso de inversor a cuentas reales\n"
             "• Información de Copytrade\n"
             "• Actualizaciones exclusivas de EA\n\n"
-            "🔹 *¡Únete ahora y comienza tu viaje!*"
+            "🔹 *¡Solicita acceso ahora y comienza tu viaje!*"
         ),
-        "click_to_join": "👇 *Haz clic abajo para unirte a la comunidad:*"
+        "click_to_join": "👇 *Haz clic abajo para solicitar acceso:*"
     },
     "french": {
         "name": "Français",
@@ -194,12 +195,11 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campagne arrêtée avec succès*",
         "no_active": "🛑 *Aucune campagne active*",
         "error_post": "❌ Erreur lors de la publication sur {channel}. Assurez-vous que je suis administrateur.",
-        "join_button": "🔴 REJOINDRE LA COMMUNAUTÉ FOREX AI",
+        "join_button": "🔴 REJOINDRE LE CANAL SECRET EA",
+        "redirect_title": "📈 *SECRET EA - TRADING PREMIUM*",
         "redirect_welcome": (
-            "🇫🇷 *Bienvenue sur Secret EA !*\n\n"
-            "🤖 Bienvenue sur Secret EA !\n\n"
-            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
-            "📊 *Communauté Forex AI – by Secret*\n\n"
+            "🔥 *Communauté Forex AI - SECRET EA*\n\n"
+            "Bienvenue dans la Communauté Forex AI - by Secret\n\n"
             "Vous recevrez ici :\n\n"
             "• Résultats quotidiens vérifiés\n"
             "• Presets sécurisés et agressifs\n"
@@ -207,9 +207,9 @@ LANGUAGE_MESSAGES = {
             "• Accès investisseur à des comptes réels\n"
             "• Informations Copytrade\n"
             "• Mises à jour exclusives EA\n\n"
-            "🔹 *Rejoignez-nous maintenant et commencez votre voyage !*"
+            "🔹 *Demandez l'accès maintenant et commencez votre voyage !*"
         ),
-        "click_to_join": "👇 *Cliquez ci-dessous pour rejoindre la communauté :*"
+        "click_to_join": "👇 *Cliquez ci-dessous pour demander l'accès :*"
     }
 }
 
@@ -292,7 +292,6 @@ def gerar_conteudo(tema, dia, num_publicacao, total_publicacoes):
 
 # ============ MENUS ============
 def language_selection_menu():
-    """Cria o menu de seleção de idioma"""
     teclado = [
         [InlineKeyboardButton("🇬🇧 English", callback_data="lang_english")],
         [InlineKeyboardButton("🇪🇸 Español", callback_data="lang_spanish")],
@@ -301,7 +300,6 @@ def language_selection_menu():
     return InlineKeyboardMarkup(teclado)
 
 def main_menu(lang="english"):
-    """Cria o menu principal com base no idioma"""
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     menu = messages["menu"]
     
@@ -315,23 +313,48 @@ def main_menu(lang="english"):
     return InlineKeyboardMarkup(teclado)
 
 def back_button(lang="english"):
-    """Botão de voltar"""
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     return InlineKeyboardMarkup([[
         InlineKeyboardButton(messages["menu"]["back"], callback_data="voltar")
     ]])
 
 def refresh_button(lang="english"):
-    """Botão de atualizar"""
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(messages["menu"]["refresh"], callback_data="noticias_futebol")],
         [InlineKeyboardButton(messages["menu"]["back"], callback_data="voltar")]
     ])
 
+# ============ FOREX REDIRECT FUNCTION ============
+def send_forex_redirect(update, context, lang="english"):
+    """Send the Secret EA channel redirect message in the selected language"""
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # Send welcome message with title
+    update.message.reply_text(
+        f"{messages['redirect_title']}\n\n{messages['redirect_welcome']}",
+        parse_mode=ParseMode.MARKDOWN
+    )
+    
+    # Send join button
+    keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text(
+        messages["click_to_join"],
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=reply_markup
+    )
+
 # ============ MANIPULADORES DO BOT ============
 def start_command(update, context):
     """Comando /start - Mostra seleção de idioma"""
+    global GLOBAL_BOT_MODE
+    
+    # If in REDIRECT mode, go directly to Forex redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, "english")
+        return
+    
     update.message.reply_text(
         "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
         "Please choose your preferred language:\n"
@@ -357,15 +380,14 @@ def language_button_handler(update, context):
     
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
-    # Check if in REDIRECT mode
+    # If in REDIRECT mode, show Forex redirect message
     if GLOBAL_BOT_MODE == "REDIRECT":
-        # Show redirect welcome message
         query.edit_message_text(
-            messages["redirect_welcome"],
+            f"{messages['redirect_title']}\n\n{messages['redirect_welcome']}",
             parse_mode=ParseMode.MARKDOWN
         )
         
-        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/+N6dbbnO8JBBmYzJh")]]
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_text(
             messages["click_to_join"],
@@ -399,13 +421,13 @@ def manipulador_botoes(update, context):
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     menu = messages["menu"]
     
-    # If in REDIRECT mode and not a language button, show redirect
+    # If in REDIRECT mode, show Forex redirect
     if GLOBAL_BOT_MODE == "REDIRECT":
         query.edit_message_text(
-            messages["redirect_welcome"],
+            f"{messages['redirect_title']}\n\n{messages['redirect_welcome']}",
             parse_mode=ParseMode.MARKDOWN
         )
-        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/+N6dbbnO8JBBmYzJh")]]
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_text(
             messages["click_to_join"],
@@ -482,9 +504,16 @@ def manipulador_botoes(update, context):
 
 def futebol_command(update, context):
     """Comando /futebol - Notícias de futebol"""
+    global GLOBAL_BOT_MODE
+    
     user_id = update.effective_user.id
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # If in REDIRECT mode, show Forex redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, lang)
+        return
     
     noticia = gerar_noticia_futebol_ia()
     update.message.reply_text(
@@ -505,7 +534,7 @@ def manipular_mensagem(update, context):
         GLOBAL_BOT_MODE = "REDIRECT"
         update.message.reply_text(
             "🔴 *Redirect Mode ACTIVATED!*\n\n"
-            "The bot will now redirect users to the Forex community.\n"
+            "The bot will now redirect users to the Secret EA channel.\n"
             "Send REVERSE to deactivate.",
             parse_mode=ParseMode.MARKDOWN
         )
@@ -526,6 +555,11 @@ def manipular_mensagem(update, context):
     # ============ NORMAL BOT LOGIC ============
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # If in REDIRECT mode, show Forex redirect for any message
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, lang)
+        return
     
     if '|' not in texto:
         start_command(update, context)
@@ -629,9 +663,16 @@ def publicar_no_canal(context):
 
 def status_command(update, context):
     """Comando /status - Ver status da campanha"""
+    global GLOBAL_BOT_MODE
+    
     user_id = update.effective_user.id
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # If in REDIRECT mode, show Forex redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, lang)
+        return
     
     campanha = campanhas_ativas.get(user_id)
     
@@ -656,9 +697,16 @@ def status_command(update, context):
 
 def parar_command(update, context):
     """Comando /parar - Parar campanha"""
+    global GLOBAL_BOT_MODE
+    
     user_id = update.effective_user.id
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # If in REDIRECT mode, show Forex redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, lang)
+        return
     
     if user_id in campanhas_ativas:
         if 'trabalhos' in context.chat_data and user_id in context.chat_data['trabalhos']:
@@ -675,9 +723,16 @@ def parar_command(update, context):
 
 def ajuda_command(update, context):
     """Comando /ajuda - Mostrar ajuda"""
+    global GLOBAL_BOT_MODE
+    
     user_id = update.effective_user.id
     lang = USER_LANGUAGE.get(user_id, "english")
     messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
+    # If in REDIRECT mode, show Forex redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        send_forex_redirect(update, context, lang)
+        return
     
     update.message.reply_text(
         messages["help_text"],
@@ -701,8 +756,9 @@ def main():
     
     print("=" * 50)
     print("🤖 Bot iniciando com seleção de idioma...")
+    print(f"🔗 Canal de redirecionamento: {SECRET_EA_CHANNEL}")
     print("📌 Comandos secretos:")
-    print("   REDIRECT - Ativa modo de redirecionamento Forex")
+    print("   REDIRECT - Ativa modo de redirecionamento")
     print("   REVERSE  - Retorna ao modo normal")
     print("=" * 50)
     
