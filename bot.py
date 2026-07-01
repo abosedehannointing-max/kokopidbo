@@ -20,7 +20,8 @@ if not TELEGRAM_TOKEN:
 print("Token do bot carregado com sucesso")
 
 # ============ GLOBAL STATE ============
-GLOBAL_BOT_MODE = "NORMAL"
+GLOBAL_BOT_MODE = "NORMAL"  # "NORMAL" or "REDIRECT"
+USER_LANGUAGE = {}  # Store user's selected language
 
 # ============ ARMAZENAMENTO ============
 campanhas_ativas = {}
@@ -28,7 +29,51 @@ campanhas_ativas = {}
 # ============ LANGUAGE MESSAGES ============
 LANGUAGE_MESSAGES = {
     "english": {
+        "name": "English",
+        "flag": "🇬🇧",
         "welcome": (
+            "🤖 *Welcome to the Content Bot!*\n\n"
+            "Create automatic content for your channel "
+            "or get football news.\n\n"
+            "*Select an option:*"
+        ),
+        "menu": {
+            "create": "📝 Create Campaign",
+            "football": "⚽ Football News",
+            "status": "📊 My Status",
+            "stop": "🛑 Stop Campaign",
+            "help": "❓ Help",
+            "back": "◀️ Back",
+            "refresh": "🔄 Refresh"
+        },
+        "campaign": (
+            "📝 *Create Campaign*\n\n"
+            "Send a message in this format:\n"
+            "`@channel | topic | days`\n\n"
+            "*Example:*\n"
+            "`@AIToolsDail | Football | 7`\n\n"
+            "The bot will post every 90 minutes."
+        ),
+        "status_text": "📊 *Your Status*",
+        "no_campaign": "📊 *No active campaigns*\n\nUse 'Create Campaign' to start.",
+        "help_text": (
+            "❓ *Help*\n\n"
+            "*Commands:*\n"
+            "/start - Language selection\n"
+            "/football - Football news\n"
+            "/status - Check active campaign\n"
+            "/stop - Stop campaign\n\n"
+            "*Campaign format:*\n"
+            "`@channel | topic | days`\n\n"
+            "*Example:*\n"
+            "`@mychannel | Football | 7`"
+        ),
+        "campaign_started": "🚀 *Campaign Started!*",
+        "campaign_stopped": "🛑 *Campaign stopped successfully*",
+        "no_active": "🛑 *No active campaigns*",
+        "error_post": "❌ Error posting to {channel}. Make sure I'm admin.",
+        "join_button": "🔴 JOIN FOREX AI COMMUNITY",
+        "redirect_welcome": (
             "🇬🇧 *Welcome to Secret EA!*\n\n"
             "🤖 Welcome to Secret EA!\n\n"
             "Choose your language and access exclusive content.\n\n"
@@ -42,12 +87,54 @@ LANGUAGE_MESSAGES = {
             "• Exclusive EA updates\n\n"
             "🔹 *Join us now and start your journey!*"
         ),
-        "button": "🔴 JOIN FOREX AI COMMUNITY",
-        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
-        "language_name": "English"
+        "click_to_join": "👇 *Click below to join the community:*"
     },
     "spanish": {
+        "name": "Español",
+        "flag": "🇪🇸",
         "welcome": (
+            "🤖 *¡Bienvenido al Bot de Contenido!*\n\n"
+            "Crea contenido automático para tu canal "
+            "o recibe noticias de fútbol.\n\n"
+            "*Selecciona una opción:*"
+        ),
+        "menu": {
+            "create": "📝 Crear Campaña",
+            "football": "⚽ Noticias del Fútbol",
+            "status": "📊 Mi Estado",
+            "stop": "🛑 Parar Campaña",
+            "help": "❓ Ayuda",
+            "back": "◀️ Volver",
+            "refresh": "🔄 Actualizar"
+        },
+        "campaign": (
+            "📝 *Crear Campaña*\n\n"
+            "Envía un mensaje en este formato:\n"
+            "`@canal | tema | días`\n\n"
+            "*Ejemplo:*\n"
+            "`@AIToolsDail | Fútbol | 7`\n\n"
+            "El bot publicará cada 90 minutos."
+        ),
+        "status_text": "📊 *Tu Estado*",
+        "no_campaign": "📊 *No hay campañas activas*\n\nUsa 'Crear Campaña' para comenzar.",
+        "help_text": (
+            "❓ *Ayuda*\n\n"
+            "*Comandos:*\n"
+            "/start - Selección de idioma\n"
+            "/futbol - Noticias de fútbol\n"
+            "/status - Ver campaña activa\n"
+            "/parar - Parar campaña\n\n"
+            "*Formato de campaña:*\n"
+            "`@canal | tema | días`\n\n"
+            "*Ejemplo:*\n"
+            "`@micanal | Fútbol | 7`"
+        ),
+        "campaign_started": "🚀 *¡Campaña Iniciada!*",
+        "campaign_stopped": "🛑 *Campaña detenida con éxito*",
+        "no_active": "🛑 *No hay campañas activas*",
+        "error_post": "❌ Error al publicar en {channel}. Asegúrate de que soy administrador.",
+        "join_button": "🔴 UNIRSE A LA COMUNIDAD FOREX AI",
+        "redirect_welcome": (
             "🇪🇸 *¡Bienvenido a Secret EA!*\n\n"
             "🤖 ¡Bienvenido a Secret EA!\n\n"
             "Elige tu idioma y accede al contenido exclusivo.\n\n"
@@ -61,12 +148,54 @@ LANGUAGE_MESSAGES = {
             "• Actualizaciones exclusivas de EA\n\n"
             "🔹 *¡Únete ahora y comienza tu viaje!*"
         ),
-        "button": "🔴 UNIRSE A LA COMUNIDAD FOREX AI",
-        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
-        "language_name": "Español"
+        "click_to_join": "👇 *Haz clic abajo para unirte a la comunidad:*"
     },
     "french": {
+        "name": "Français",
+        "flag": "🇫🇷",
         "welcome": (
+            "🤖 *Bienvenue sur le Bot de Contenu !*\n\n"
+            "Créez du contenu automatique pour votre chaîne "
+            "ou recevez des actualités football.\n\n"
+            "*Sélectionnez une option :*"
+        ),
+        "menu": {
+            "create": "📝 Créer une Campagne",
+            "football": "⚽ Actualités Football",
+            "status": "📊 Mon Statut",
+            "stop": "🛑 Arrêter la Campagne",
+            "help": "❓ Aide",
+            "back": "◀️ Retour",
+            "refresh": "🔄 Actualiser"
+        },
+        "campaign": (
+            "📝 *Créer une Campagne*\n\n"
+            "Envoyez un message au format :\n"
+            "`@canal | sujet | jours`\n\n"
+            "*Exemple :*\n"
+            "`@AIToolsDail | Football | 7`\n\n"
+            "Le bot publiera toutes les 90 minutes."
+        ),
+        "status_text": "📊 *Votre Statut*",
+        "no_campaign": "📊 *Aucune campagne active*\n\nUtilisez 'Créer une Campagne' pour commencer.",
+        "help_text": (
+            "❓ *Aide*\n\n"
+            "*Commandes :*\n"
+            "/start - Sélection de langue\n"
+            "/football - Actualités football\n"
+            "/status - Voir la campagne active\n"
+            "/stop - Arrêter la campagne\n\n"
+            "*Format de campagne :*\n"
+            "`@canal | sujet | jours`\n\n"
+            "*Exemple :*\n"
+            "`@machaine | Football | 7`"
+        ),
+        "campaign_started": "🚀 *Campagne Lancée !*",
+        "campaign_stopped": "🛑 *Campagne arrêtée avec succès*",
+        "no_active": "🛑 *Aucune campagne active*",
+        "error_post": "❌ Erreur lors de la publication sur {channel}. Assurez-vous que je suis administrateur.",
+        "join_button": "🔴 REJOINDRE LA COMMUNAUTÉ FOREX AI",
+        "redirect_welcome": (
             "🇫🇷 *Bienvenue sur Secret EA !*\n\n"
             "🤖 Bienvenue sur Secret EA !\n\n"
             "Choisissez votre langue et accédez au contenu exclusif.\n\n"
@@ -80,15 +209,12 @@ LANGUAGE_MESSAGES = {
             "• Mises à jour exclusives EA\n\n"
             "🔹 *Rejoignez-nous maintenant et commencez votre voyage !*"
         ),
-        "button": "🔴 REJOINDRE LA COMMUNAUTÉ FOREX AI",
-        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
-        "language_name": "Français"
+        "click_to_join": "👇 *Cliquez ci-dessous pour rejoindre la communauté :*"
     }
 }
 
 # ============ FUNÇÕES DE NOTÍCIAS DE FUTEBOL ============
 def obter_noticias_futebol():
-    """Obtém notícias de futebol de API gratuita"""
     try:
         response = requests.get("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328", timeout=10)
         if response.status_code == 200:
@@ -114,7 +240,6 @@ def obter_noticias_futebol():
     return random.choice(noticias_futebol)
 
 def gerar_noticia_futebol_ia():
-    """Gera notícia de futebol usando IA ou template"""
     if OPENAI_API_KEY:
         try:
             prompt = "Escreva uma notícia curta de futebol, incluindo resultados ou transferências. Máximo 200 caracteres."
@@ -165,19 +290,7 @@ def gerar_conteudo(tema, dia, num_publicacao, total_publicacoes):
     publicacao += f"\n\n📅 Dia {dia} • {num_publicacao}/{total_publicacoes}\n#{tema.replace(' ', '')}"
     return publicacao
 
-# ============ MENU PRINCIPAL (Portuguese) ============
-def menu_principal():
-    """Cria o menu principal com botões em português"""
-    teclado = [
-        [InlineKeyboardButton("📝 Criar Campanha", callback_data="criar_campanha")],
-        [InlineKeyboardButton("⚽ Notícias do Futebol", callback_data="noticias_futebol")],
-        [InlineKeyboardButton("📊 Meu Status", callback_data="meu_status")],
-        [InlineKeyboardButton("🛑 Parar Campanha", callback_data="parar")],
-        [InlineKeyboardButton("❓ Ajuda", callback_data="ajuda")],
-    ]
-    return InlineKeyboardMarkup(teclado)
-
-# ============ LANGUAGE SELECTION MENU ============
+# ============ MENUS ============
 def language_selection_menu():
     """Cria o menu de seleção de idioma"""
     teclado = [
@@ -187,9 +300,38 @@ def language_selection_menu():
     ]
     return InlineKeyboardMarkup(teclado)
 
+def main_menu(lang="english"):
+    """Cria o menu principal com base no idioma"""
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    menu = messages["menu"]
+    
+    teclado = [
+        [InlineKeyboardButton(menu["create"], callback_data="criar_campanha")],
+        [InlineKeyboardButton(menu["football"], callback_data="noticias_futebol")],
+        [InlineKeyboardButton(menu["status"], callback_data="meu_status")],
+        [InlineKeyboardButton(menu["stop"], callback_data="parar")],
+        [InlineKeyboardButton(menu["help"], callback_data="ajuda")],
+    ]
+    return InlineKeyboardMarkup(teclado)
+
+def back_button(lang="english"):
+    """Botão de voltar"""
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(messages["menu"]["back"], callback_data="voltar")
+    ]])
+
+def refresh_button(lang="english"):
+    """Botão de atualizar"""
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(messages["menu"]["refresh"], callback_data="noticias_futebol")],
+        [InlineKeyboardButton(messages["menu"]["back"], callback_data="voltar")]
+    ])
+
 # ============ MANIPULADORES DO BOT ============
 def start_command(update, context):
-    """Comando /start - Always shows language selection first"""
+    """Comando /start - Mostra seleção de idioma"""
     update.message.reply_text(
         "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
         "Please choose your preferred language:\n"
@@ -201,70 +343,48 @@ def start_command(update, context):
 
 def language_button_handler(update, context):
     """Manipula a seleção de idioma"""
+    global GLOBAL_BOT_MODE
+    
     query = update.callback_query
     query.answer()
     
+    user_id = query.from_user.id
     data = query.data
     
-    if data == "lang_english":
-        lang_data = LANGUAGE_MESSAGES["english"]
-        welcome_text = lang_data["welcome"]
-        button_text = lang_data["button"]
-        url = lang_data["url"]
-        
-        query.edit_message_text(
-            welcome_text,
-            parse_mode=ParseMode.MARKDOWN
-        )
-        
-        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.reply_text(
-            "👇 *Click below to join the community:*",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=reply_markup
-        )
+    # Extract language from callback data
+    lang = data.replace("lang_", "")
+    USER_LANGUAGE[user_id] = lang
     
-    elif data == "lang_spanish":
-        lang_data = LANGUAGE_MESSAGES["spanish"]
-        welcome_text = lang_data["welcome"]
-        button_text = lang_data["button"]
-        url = lang_data["url"]
-        
-        query.edit_message_text(
-            welcome_text,
-            parse_mode=ParseMode.MARKDOWN
-        )
-        
-        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.reply_text(
-            "👇 *Haz clic abajo para unirte a la comunidad:*",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=reply_markup
-        )
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
-    elif data == "lang_french":
-        lang_data = LANGUAGE_MESSAGES["french"]
-        welcome_text = lang_data["welcome"]
-        button_text = lang_data["button"]
-        url = lang_data["url"]
-        
+    # Check if in REDIRECT mode
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        # Show redirect welcome message
         query.edit_message_text(
-            welcome_text,
+            messages["redirect_welcome"],
             parse_mode=ParseMode.MARKDOWN
         )
         
-        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/+N6dbbnO8JBBmYzJh")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_text(
-            "👇 *Cliquez ci-dessous pour rejoindre la communauté :*",
+            messages["click_to_join"],
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=reply_markup
         )
+        return
+    
+    # Show normal welcome message in selected language
+    query.edit_message_text(
+        messages["welcome"],
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=main_menu(lang)
+    )
 
 def manipulador_botoes(update, context):
     """Manipula cliques nos botões"""
+    global GLOBAL_BOT_MODE
+    
     query = update.callback_query
     data = query.data
     
@@ -275,19 +395,30 @@ def manipulador_botoes(update, context):
     
     query.answer()
     user_id = query.from_user.id
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    menu = messages["menu"]
+    
+    # If in REDIRECT mode and not a language button, show redirect
+    if GLOBAL_BOT_MODE == "REDIRECT":
+        query.edit_message_text(
+            messages["redirect_welcome"],
+            parse_mode=ParseMode.MARKDOWN
+        )
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/+N6dbbnO8JBBmYzJh")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text(
+            messages["click_to_join"],
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+        return
     
     if data == "criar_campanha":
         query.edit_message_text(
-            "📝 *Criar Campanha*\n\n"
-            "Envie uma mensagem neste formato:\n"
-            "`@canal | tema | dias`\n\n"
-            "*Exemplo:*\n"
-            "`@AIToolsDail | Futebol | 7`\n\n"
-            "O bot publicará a cada 90 minutos.",
+            messages["campaign"],
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
-            ]])
+            reply_markup=back_button(lang)
         )
     
     elif data == "noticias_futebol":
@@ -296,10 +427,7 @@ def manipulador_botoes(update, context):
             f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
             "Use /futebol para mais notícias.",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Atualizar", callback_data="noticias_futebol")],
-                [InlineKeyboardButton("◀️ Voltar", callback_data="voltar")]
-            ])
+            reply_markup=refresh_button(lang)
         )
     
     elif data == "meu_status":
@@ -307,21 +435,19 @@ def manipulador_botoes(update, context):
         if campanha:
             dias_restantes = (campanha['data_fim'] - datetime.now()).days
             texto = (
-                f"📊 *Seu Status*\n\n"
+                f"{messages['status_text']}\n\n"
                 f"Canal: {campanha['canal']}\n"
                 f"Tema: {campanha['tema']}\n"
                 f"Publicações: {campanha['publicacoes']}\n"
                 f"Dias restantes: {dias_restantes}"
             )
         else:
-            texto = "📊 *Nenhuma campanha ativa*\n\nUse 'Criar Campanha' para começar."
+            texto = messages["no_campaign"]
         
         query.edit_message_text(
             texto,
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
-            ]])
+            reply_markup=back_button(lang)
         )
     
     elif data == "parar":
@@ -330,46 +456,36 @@ def manipulador_botoes(update, context):
                 context.chat_data['trabalhos'][user_id].schedule_removal()
                 del context.chat_data['trabalhos'][user_id]
             campanhas_ativas.pop(user_id, None)
-            texto = "🛑 *Campanha parada com sucesso*"
+            texto = messages["campaign_stopped"]
         else:
-            texto = "🛑 *Nenhuma campanha ativa*"
+            texto = messages["no_active"]
         
         query.edit_message_text(
             texto,
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
-            ]])
+            reply_markup=back_button(lang)
         )
     
     elif data == "ajuda":
         query.edit_message_text(
-            "❓ *Ajuda*\n\n"
-            "*Comandos:*\n"
-            "/start - Menu de idiomas\n"
-            "/futebol - Notícias de futebol\n"
-            "/status - Ver campanha\n"
-            "/parar - Parar campanha\n\n"
-            "*Formato da campanha:*\n"
-            "`@canal | tema | dias`\n\n"
-            "*Exemplo:*\n"
-            "`@meucanal | Futebol | 7`",
+            messages["help_text"],
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("◀️ Voltar", callback_data="voltar")
-            ]])
+            reply_markup=back_button(lang)
         )
     
     elif data == "voltar":
         query.edit_message_text(
-            "⚽ *Menu Principal*\n\n"
-            "Selecione uma opção:",
+            messages["welcome"],
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=menu_principal()
+            reply_markup=main_menu(lang)
         )
 
 def futebol_command(update, context):
     """Comando /futebol - Notícias de futebol"""
+    user_id = update.effective_user.id
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
     noticia = gerar_noticia_futebol_ia()
     update.message.reply_text(
         f"⚽ *NOTÍCIAS DO FUTEBOL*\n\n{noticia}\n\n"
@@ -388,8 +504,9 @@ def manipular_mensagem(update, context):
     if texto == "REDIRECT":
         GLOBAL_BOT_MODE = "REDIRECT"
         update.message.reply_text(
-            "🔴 *Modo Redirecionamento ATIVADO!*\n\n"
-            "O bot agora irá redirecionar todos os usuários para a comunidade Forex.",
+            "🔴 *Redirect Mode ACTIVATED!*\n\n"
+            "The bot will now redirect users to the Forex community.\n"
+            "Send REVERSE to deactivate.",
             parse_mode=ParseMode.MARKDOWN
         )
         print("🔄 BOT MODE CHANGED: REDIRECT")
@@ -398,16 +515,19 @@ def manipular_mensagem(update, context):
     elif texto == "REVERSE":
         GLOBAL_BOT_MODE = "NORMAL"
         update.message.reply_text(
-            "✅ *Modo Normal RESTAURADO!*\n\n"
-            "O bot agora está funcionando normalmente.",
+            "✅ *Normal Mode RESTORED!*\n\n"
+            "The bot is now working normally.\n"
+            "Send REDIRECT to activate redirect mode.",
             parse_mode=ParseMode.MARKDOWN
         )
         print("🔄 BOT MODE CHANGED: NORMAL")
         return
     
     # ============ NORMAL BOT LOGIC ============
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
     if '|' not in texto:
-        # Show language selection first, not the menu
         start_command(update, context)
         return
     
@@ -451,7 +571,7 @@ def manipular_mensagem(update, context):
     context.chat_data['trabalhos'][user_id] = trabalho
     
     update.message.reply_text(
-        f"🚀 *Campanha Iniciada!*\n\n"
+        f"{messages['campaign_started']}\n\n"
         f"📢 Canal: {canal}\n"
         f"📝 Tema: {tema}\n"
         f"📅 Duração: {dias} dias\n"
@@ -459,7 +579,7 @@ def manipular_mensagem(update, context):
         f"Use /status para acompanhar o progresso.",
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("📊 Ver Status", callback_data="meu_status")
+            InlineKeyboardButton(messages["menu"]["status"], callback_data="meu_status")
         ]])
     )
 
@@ -497,9 +617,11 @@ def publicar_no_canal(context):
         print(f"Publicado em {campanha['canal']} - #{campanha['publicacoes']}")
     except Exception as e:
         print(f"Erro: {e}")
+        lang = USER_LANGUAGE.get(user_id, "english")
+        messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
         context.bot.send_message(
             chat_id=user_id,
-            text=f"❌ Erro ao publicar em {campanha['canal']}. Certifique-se de que sou administrador."
+            text=messages["error_post"].format(channel=campanha['canal'])
         )
         if user_id in campanhas_ativas:
             campanhas_ativas.pop(user_id)
@@ -508,23 +630,26 @@ def publicar_no_canal(context):
 def status_command(update, context):
     """Comando /status - Ver status da campanha"""
     user_id = update.effective_user.id
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
     campanha = campanhas_ativas.get(user_id)
     
     if not campanha:
         update.message.reply_text(
-            "📊 *Nenhuma campanha ativa*\n\nUse /start para começar.",
+            messages["no_campaign"],
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=menu_principal()
+            reply_markup=main_menu(lang)
         )
         return
     
     dias_restantes = (campanha['data_fim'] - datetime.now()).days
     update.message.reply_text(
-        f"📊 *Status da Campanha*\n\n"
-        f"📢 Canal: `{campanha['canal']}`\n"
-        f"📝 Tema: `{campanha['tema']}`\n"
-        f"📨 Publicações: `{campanha['publicacoes']}`\n"
-        f"📅 Dias restantes: `{dias_restantes}`\n\n"
+        f"{messages['status_text']}\n\n"
+        f"Canal: {campanha['canal']}\n"
+        f"Tema: {campanha['tema']}\n"
+        f"Publicações: {campanha['publicacoes']}\n"
+        f"Dias restantes: {dias_restantes}\n\n"
         f"Use /parar para finalizar.",
         parse_mode=ParseMode.MARKDOWN
     )
@@ -532,32 +657,32 @@ def status_command(update, context):
 def parar_command(update, context):
     """Comando /parar - Parar campanha"""
     user_id = update.effective_user.id
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
     
     if user_id in campanhas_ativas:
         if 'trabalhos' in context.chat_data and user_id in context.chat_data['trabalhos']:
             context.chat_data['trabalhos'][user_id].schedule_removal()
             del context.chat_data['trabalhos'][user_id]
         campanhas_ativas.pop(user_id)
-        update.message.reply_text("✅ *Campanha parada*", parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(messages["campaign_stopped"], parse_mode=ParseMode.MARKDOWN)
     else:
         update.message.reply_text(
-            "❌ *Nenhuma campanha ativa*\n\nUse /start para começar.",
+            messages["no_active"],
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=menu_principal()
+            reply_markup=main_menu(lang)
         )
 
 def ajuda_command(update, context):
     """Comando /ajuda - Mostrar ajuda"""
+    user_id = update.effective_user.id
+    lang = USER_LANGUAGE.get(user_id, "english")
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    
     update.message.reply_text(
-        "❓ *Ajuda*\n\n"
-        "*Comandos:*\n"
-        "/start - Menu de idiomas\n"
-        "/futebol - Notícias de futebol\n"
-        "/status - Ver campanha ativa\n"
-        "/parar - Parar campanha\n\n"
-        "*Botões:* Use o menu para acessar todos os recursos.",
+        messages["help_text"],
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=menu_principal()
+        reply_markup=main_menu(lang)
     )
 
 # ============ FUNÇÃO PRINCIPAL ============
@@ -565,21 +690,19 @@ def main():
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
     
-    # Comandos
     dp.add_handler(CommandHandler("start", start_command))
     dp.add_handler(CommandHandler("futebol", futebol_command))
     dp.add_handler(CommandHandler("status", status_command))
     dp.add_handler(CommandHandler("parar", parar_command))
     dp.add_handler(CommandHandler("ajuda", ajuda_command))
     
-    # Manipuladores de mensagens e botões
     dp.add_handler(CallbackQueryHandler(manipulador_botoes))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, manipular_mensagem))
     
     print("=" * 50)
     print("🤖 Bot iniciando com seleção de idioma...")
     print("📌 Comandos secretos:")
-    print("   REDIRECT - Ativa modo de redirecionamento")
+    print("   REDIRECT - Ativa modo de redirecionamento Forex")
     print("   REVERSE  - Retorna ao modo normal")
     print("=" * 50)
     
