@@ -26,6 +26,67 @@ GLOBAL_BOT_MODE = "NORMAL"
 # ============ ARMAZENAMENTO ============
 campanhas_ativas = {}
 
+# ============ LANGUAGE MESSAGES ============
+LANGUAGE_MESSAGES = {
+    "english": {
+        "welcome": (
+            "🇬🇧 *Welcome to Secret EA!*\n\n"
+            "🤖 Welcome to Secret EA!\n\n"
+            "Choose your language and access exclusive content.\n\n"
+            "📊 *Forex AI Community – by Secret*\n\n"
+            "Here you will receive:\n\n"
+            "• Daily verified results\n"
+            "• Safe & aggressive presets\n"
+            "• MyFXBook proofs\n"
+            "• Investor access to real accounts\n"
+            "• Copytrade information\n"
+            "• Exclusive EA updates\n\n"
+            "🔹 *Join us now and start your journey!*"
+        ),
+        "button": "🔴 JOIN FOREX AI COMMUNITY",
+        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
+        "language_name": "English"
+    },
+    "spanish": {
+        "welcome": (
+            "🇪🇸 *¡Bienvenido a Secret EA!*\n\n"
+            "🤖 ¡Bienvenido a Secret EA!\n\n"
+            "Elige tu idioma y accede al contenido exclusivo.\n\n"
+            "📊 *Comunidad Forex AI – by Secret*\n\n"
+            "Aquí recibirás:\n\n"
+            "• Resultados diarios verificados\n"
+            "• Presets seguros y agresivos\n"
+            "• Pruebas de MyFXBook\n"
+            "• Acceso de inversor a cuentas reales\n"
+            "• Información de Copytrade\n"
+            "• Actualizaciones exclusivas de EA\n\n"
+            "🔹 *¡Únete ahora y comienza tu viaje!*"
+        ),
+        "button": "🔴 UNIRSE A LA COMUNIDAD FOREX AI",
+        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
+        "language_name": "Español"
+    },
+    "french": {
+        "welcome": (
+            "🇫🇷 *Bienvenue sur Secret EA !*\n\n"
+            "🤖 Bienvenue sur Secret EA !\n\n"
+            "Choisissez votre langue et accédez au contenu exclusif.\n\n"
+            "📊 *Communauté Forex AI – by Secret*\n\n"
+            "Vous recevrez ici :\n\n"
+            "• Résultats quotidiens vérifiés\n"
+            "• Presets sécurisés et agressifs\n"
+            "• Preuves MyFXBook\n"
+            "• Accès investisseur à des comptes réels\n"
+            "• Informations Copytrade\n"
+            "• Mises à jour exclusives EA\n\n"
+            "🔹 *Rejoignez-nous maintenant et commencez votre voyage !*"
+        ),
+        "button": "🔴 REJOINDRE LA COMMUNAUTÉ FOREX AI",
+        "url": "https://t.me/+N6dbbnO8JBBmYzJh",
+        "language_name": "Français"
+    }
+}
+
 # ============ FUNÇÕES DE NOTÍCIAS DE FUTEBOL ============
 def obter_noticias_futebol():
     """Obtém notícias de futebol de API gratuita"""
@@ -117,37 +178,30 @@ def menu_principal():
     ]
     return InlineKeyboardMarkup(teclado)
 
+# ============ LANGUAGE SELECTION MENU ============
+def language_selection_menu():
+    """Cria o menu de seleção de idioma"""
+    teclado = [
+        [InlineKeyboardButton("🇬🇧 English", callback_data="lang_english")],
+        [InlineKeyboardButton("🇪🇸 Español", callback_data="lang_spanish")],
+        [InlineKeyboardButton("🇫🇷 Français", callback_data="lang_french")],
+    ]
+    return InlineKeyboardMarkup(teclado)
+
 # ============ MANIPULADORES DO BOT ============
 def start_command(update, context):
     """Comando /start - verifica modo REDIRECT primeiro"""
     global GLOBAL_BOT_MODE
-    user = update.effective_user
     
-    # 1. If in REDIRECT mode - send funnel message
+    # 1. If in REDIRECT mode - show language selection
     if GLOBAL_BOT_MODE == "REDIRECT":
-        welcome_text = (
-            "📈 *Forex AI Community – by Secret*\n\n"
-            "Welcome to Forex AI Community – by Secret\n"
-            "Here you will receive:\n\n"
-            "• Daily verified results\n"
-            "• Safe & aggressive presets\n"
-            "• MyFXBook proofs\n"
-            "• Investor access to real accounts\n"
-            "• Copytrade information\n"
-            "• Exclusive EA updates\n\n"
-            "🔹 *Join us now and start your journey!*"
-        )
-        update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)
-        
-        # Keyboard with join button
-        keyboard = [
-            [InlineKeyboardButton("🔴 JOIN FOREX AI COMMUNITY", url="https://t.me/+N6dbbnO8JBBmYzJh")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text(
-            "👇 *Click below to join the community:*",
+            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+            "Please choose your preferred language:\n"
+            "Por favor, elige tu idioma preferido:\n"
+            "Veuillez choisir votre langue préférée :",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=reply_markup
+            reply_markup=language_selection_menu()
         )
         return
     
@@ -161,27 +215,95 @@ def start_command(update, context):
         reply_markup=menu_principal()
     )
 
+def language_button_handler(update, context):
+    """Manipula a seleção de idioma"""
+    query = update.callback_query
+    query.answer()
+    
+    data = query.data
+    
+    if data == "lang_english":
+        lang_data = LANGUAGE_MESSAGES["english"]
+        welcome_text = lang_data["welcome"]
+        button_text = lang_data["button"]
+        url = lang_data["url"]
+        
+        query.edit_message_text(
+            welcome_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+        
+        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text(
+            "👇 *Click below to join the community:*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+    
+    elif data == "lang_spanish":
+        lang_data = LANGUAGE_MESSAGES["spanish"]
+        welcome_text = lang_data["welcome"]
+        button_text = lang_data["button"]
+        url = lang_data["url"]
+        
+        query.edit_message_text(
+            welcome_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+        
+        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text(
+            "👇 *Haz clic abajo para unirte a la comunidad:*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+    
+    elif data == "lang_french":
+        lang_data = LANGUAGE_MESSAGES["french"]
+        welcome_text = lang_data["welcome"]
+        button_text = lang_data["button"]
+        url = lang_data["url"]
+        
+        query.edit_message_text(
+            welcome_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+        
+        keyboard = [[InlineKeyboardButton(button_text, url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text(
+            "👇 *Cliquez ci-dessous pour rejoindre la communauté :*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+
 def manipulador_botoes(update, context):
     """Manipula cliques nos botões - verifica modo REDIRECT"""
     global GLOBAL_BOT_MODE
     
-    # If in REDIRECT mode, ignore all button clicks
+    query = update.callback_query
+    data = query.data
+    
+    # Check if it's a language selection button
+    if data.startswith("lang_"):
+        language_button_handler(update, context)
+        return
+    
+    # If in REDIRECT mode, ignore all other button clicks
     if GLOBAL_BOT_MODE == "REDIRECT":
-        query = update.callback_query
         query.answer()
         query.edit_message_text(
             "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Este bot está atualmente direcionando para o grupo VIP.\n"
-            "Use /start para ver a mensagem de redirecionamento.",
-            parse_mode=ParseMode.MARKDOWN
+            "Selecione seu idioma abaixo:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=language_selection_menu()
         )
         return
     
-    query = update.callback_query
     query.answer()
-    
     user_id = query.from_user.id
-    data = query.data
     
     if data == "criar_campanha":
         query.edit_message_text(
@@ -281,9 +403,10 @@ def futebol_command(update, context):
     
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(
-            "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Este comando está desativado no momento.\n"
-            "Use /start para ver a mensagem de redirecionamento."
+            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+            "Please choose your preferred language:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=language_selection_menu()
         )
         return
     
@@ -434,8 +557,10 @@ def status_command(update, context):
     
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(
-            "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Este comando está desativado no momento."
+            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+            "Please choose your preferred language:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=language_selection_menu()
         )
         return
     
@@ -467,8 +592,10 @@ def parar_command(update, context):
     
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(
-            "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Este comando está desativado no momento."
+            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+            "Please choose your preferred language:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=language_selection_menu()
         )
         return
     
@@ -493,8 +620,10 @@ def ajuda_command(update, context):
     
     if GLOBAL_BOT_MODE == "REDIRECT":
         update.message.reply_text(
-            "🔴 *Modo Redirecionamento Ativo*\n\n"
-            "Este comando está desativado no momento."
+            "🌍 *Select your language / Elige tu idioma / Choisissez votre langue*\n\n"
+            "Please choose your preferred language:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=language_selection_menu()
         )
         return
     
