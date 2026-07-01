@@ -13,9 +13,6 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
-# Secret EA Channel Link
-SECRET_EA_CHANNEL = "https://t.me/forexai_secret"  # Replace with your actual channel link
-
 if not TELEGRAM_TOKEN:
     print("ERRO: TELEGRAM_BOT_TOKEN não configurado")
     exit(1)
@@ -75,7 +72,7 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaign stopped successfully*",
         "no_active": "🛑 *No active campaigns*",
         "error_post": "❌ Error posting to {channel}. Make sure I'm admin.",
-        "join_button": "🔴 JOIN SECRET EA CHANNEL",
+        "join_button": "🔴 CONTACT ADMIN TO JOIN",
         "redirect_title": "📈 *SECRET EA - PREMIUM TRADING*",
         "redirect_welcome": (
             "🔥 *Forex AI Community - SECRET EA*\n\n"
@@ -87,9 +84,9 @@ LANGUAGE_MESSAGES = {
             "• Investor access to real accounts\n"
             "• Copytrade information\n"
             "• Exclusive EA updates\n\n"
-            "🔹 *Request to join now and start your journey!*"
+            "🔹 *Contact @suportforexai to request access!*"
         ),
-        "click_to_join": "👇 *Click below to request access:*"
+        "click_to_join": "👇 *Contact the admin below to join:*"
     },
     "spanish": {
         "name": "Español",
@@ -135,7 +132,7 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campaña detenida con éxito*",
         "no_active": "🛑 *No hay campañas activas*",
         "error_post": "❌ Error al publicar en {channel}. Asegúrate de que soy administrador.",
-        "join_button": "🔴 UNIRSE AL CANAL SECRET EA",
+        "join_button": "🔴 CONTACTAR ADMIN PARA UNIRSE",
         "redirect_title": "📈 *SECRET EA - TRADING PREMIUM*",
         "redirect_welcome": (
             "🔥 *Comunidad Forex AI - SECRET EA*\n\n"
@@ -147,9 +144,9 @@ LANGUAGE_MESSAGES = {
             "• Acceso de inversor a cuentas reales\n"
             "• Información de Copytrade\n"
             "• Actualizaciones exclusivas de EA\n\n"
-            "🔹 *¡Solicita acceso ahora y comienza tu viaje!*"
+            "🔹 *¡Contacta a @suportforexai para solicitar acceso!*"
         ),
-        "click_to_join": "👇 *Haz clic abajo para solicitar acceso:*"
+        "click_to_join": "👇 *Contacta al administrador abajo para unirte:*"
     },
     "french": {
         "name": "Français",
@@ -195,7 +192,7 @@ LANGUAGE_MESSAGES = {
         "campaign_stopped": "🛑 *Campagne arrêtée avec succès*",
         "no_active": "🛑 *Aucune campagne active*",
         "error_post": "❌ Erreur lors de la publication sur {channel}. Assurez-vous que je suis administrateur.",
-        "join_button": "🔴 REJOINDRE LE CANAL SECRET EA",
+        "join_button": "🔴 CONTACTER L'ADMIN POUR REJOINDRE",
         "redirect_title": "📈 *SECRET EA - TRADING PREMIUM*",
         "redirect_welcome": (
             "🔥 *Communauté Forex AI - SECRET EA*\n\n"
@@ -207,9 +204,9 @@ LANGUAGE_MESSAGES = {
             "• Accès investisseur à des comptes réels\n"
             "• Informations Copytrade\n"
             "• Mises à jour exclusives EA\n\n"
-            "🔹 *Demandez l'accès maintenant et commencez votre voyage !*"
+            "🔹 *Contactez @suportforexai pour demander l'accès !*"
         ),
-        "click_to_join": "👇 *Cliquez ci-dessous pour demander l'accès :*"
+        "click_to_join": "👇 *Contactez l'administrateur ci-dessous pour rejoindre :*"
     }
 }
 
@@ -325,6 +322,15 @@ def refresh_button(lang="english"):
         [InlineKeyboardButton(messages["menu"]["back"], callback_data="voltar")]
     ])
 
+# ============ CONTACT BUTTON ============
+def contact_admin_button(lang="english"):
+    """Create a button that opens a chat with the admin"""
+    messages = LANGUAGE_MESSAGES.get(lang, LANGUAGE_MESSAGES["english"])
+    # This button opens a chat with @suportforexai
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(messages["join_button"], url="https://t.me/suportforexai")
+    ]])
+
 # ============ FOREX REDIRECT FUNCTION ============
 def send_forex_redirect(update, context, lang="english"):
     """Send the Secret EA channel redirect message in the selected language"""
@@ -336,8 +342,8 @@ def send_forex_redirect(update, context, lang="english"):
         parse_mode=ParseMode.MARKDOWN
     )
     
-    # Send join button
-    keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
+    # Send contact button
+    keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/suportforexai")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text(
         messages["click_to_join"],
@@ -387,7 +393,7 @@ def language_button_handler(update, context):
             parse_mode=ParseMode.MARKDOWN
         )
         
-        keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/suportforexai")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_text(
             messages["click_to_join"],
@@ -427,7 +433,7 @@ def manipulador_botoes(update, context):
             f"{messages['redirect_title']}\n\n{messages['redirect_welcome']}",
             parse_mode=ParseMode.MARKDOWN
         )
-        keyboard = [[InlineKeyboardButton(messages["join_button"], url=SECRET_EA_CHANNEL)]]
+        keyboard = [[InlineKeyboardButton(messages["join_button"], url="https://t.me/suportforexai")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.message.reply_text(
             messages["click_to_join"],
@@ -756,7 +762,6 @@ def main():
     
     print("=" * 50)
     print("🤖 Bot iniciando com seleção de idioma...")
-    print(f"🔗 Canal de redirecionamento: {SECRET_EA_CHANNEL}")
     print("📌 Comandos secretos:")
     print("   REDIRECT - Ativa modo de redirecionamento")
     print("   REVERSE  - Retorna ao modo normal")
